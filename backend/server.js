@@ -10,7 +10,7 @@ dotenv.config();
 
 const pool = require('./config/database');
 
-// Import routes with try-catch
+// Import routes
 let authRoutes, investmentRoutes, paymentRoutes, withdrawalRoutes, adminRoutes, webhookRoutes;
 
 try { authRoutes = require('./routes/authRoutes'); } catch (e) { console.log('⚠️ authRoutes not loaded'); }
@@ -72,10 +72,12 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Error handling
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: err.message });
+// 🚀 IMPORTANT: Serve React frontend
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// Any route not starting with /api will serve the React app
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
 
 // Update yields every 6 hours
@@ -110,11 +112,12 @@ app.listen(PORT, () => {
     ║                                                          ║
     ║     🏦 PrimeStone Investment Platform                    ║
     ║     🔌 Server running on port ${PORT}                      ║
+    ║     🌐 Website: http://localhost:${PORT}                  ║
     ║     🌐 API: http://localhost:${PORT}/api                  ║
     ║     💊 Health: http://localhost:${PORT}/api/health        ║
     ║                                                          ║
-    ║     📈 6-Month Yield Period (180 days)                  ║
-    ║     💰 Minimum Investment: $1000                        ║
+    ║     ✅ Frontend & Backend combined!                      ║
+    ║     📈 6-Month Yield Period                              ║
     ║                                                          ║
     ╚══════════════════════════════════════════════════════════╝
     `);
