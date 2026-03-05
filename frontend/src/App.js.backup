@@ -1,0 +1,123 @@
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
+
+// Layout Components
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+
+// Page Components
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Investments from './pages/Investments';
+import InvestmentDetail from './pages/InvestmentDetail';
+import Payments from './pages/Payments';
+import Withdrawals from './pages/Withdrawals';
+import WithdrawalDetail from './pages/WithdrawalDetail';
+import Profile from './pages/Profile';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminWithdrawals from './pages/admin/AdminWithdrawals';
+import AdminTransactions from './pages/admin/AdminTransactions';
+import AdminSettings from './pages/admin/AdminSettings';
+
+// Context
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+
+// Protected Route Component
+import ProtectedRoute from './components/ProtectedRoute';
+
+function App() {
+  return (
+    <HelmetProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <div className="min-h-screen bg-gradient-to-b from-primestone-50 to-white flex flex-col">
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Protected User Routes */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/investments" element={
+                  <ProtectedRoute>
+                    <Investments />
+                  </ProtectedRoute>
+                } />
+                <Route path="/investments/:id" element={
+                  <ProtectedRoute>
+                    <InvestmentDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/payments" element={
+                  <ProtectedRoute>
+                    <Payments />
+                  </ProtectedRoute>
+                } />
+                <Route path="/withdrawals" element={
+                  <ProtectedRoute>
+                    <Withdrawals />
+                  </ProtectedRoute>
+                } />
+                <Route path="/withdrawals/:id" element={
+                  <ProtectedRoute>
+                    <WithdrawalDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Admin Routes */}
+                <Route path="/admin" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminUsers />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/withdrawals" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminWithdrawals />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/transactions" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminTransactions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/settings" element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminSettings />
+                  </ProtectedRoute>
+                } />
+                
+                {/* 404 Redirect */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </AuthProvider>
+      </ThemeProvider>
+    </HelmetProvider>
+  );
+}
+
+export default App;
