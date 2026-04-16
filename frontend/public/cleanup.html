@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f0f9ff; }
+        .container { max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px; }
+        button:hover { background: #1d4ed8; }
+        .success { color: green; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Clear Browser Storage</h1>
+        <p>Click the button below to clear all stored sessions. This will log you out of both admin and user accounts.</p>
+        <button onclick="clearStorage()">Clear Storage & Redirect to Home</button>
+        <div id="message" class="success"></div>
+    </div>
+
+    <script>
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            document.getElementById('message').innerHTML = '✅ Storage cleared! Redirecting to home page...';
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

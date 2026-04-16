@@ -1,320 +1,137 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { 
-  HiOutlineHome, 
-  HiOutlineChartBar, 
-  HiOutlineCash, 
-  HiOutlineCreditCard, 
-  HiOutlineUser,
+  HiOutlineUser, 
   HiOutlineLogout,
   HiOutlineMenu,
   HiOutlineX,
-  HiOutlineBell,
-  HiOutlineMoon,
-  HiOutlineSun
+  HiOutlineChartSquareBar,
+  HiOutlineFolder,
+  HiOutlineCreditCard,
+  HiOutlineCash,
+  HiOutlineHome
 } from 'react-icons/hi';
 
 const Navbar = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
-  const { darkMode, toggleDarkMode } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLogout = () => {
     logout();
+    setIsMenuOpen(false);
     navigate('/');
-    setIsOpen(false);
   };
 
-  const navLinks = [
-    { name: 'Home', path: '/', icon: HiOutlineHome, public: true },
-    { name: 'Dashboard', path: '/dashboard', icon: HiOutlineChartBar, public: false, admin: false },
-    { name: 'Investments', path: '/investments', icon: HiOutlineCash, public: false, admin: false },
-    { name: 'Payments', path: '/payments', icon: HiOutlineCreditCard, public: false, admin: false },
-    { name: 'Withdrawals', path: '/withdrawals', icon: HiOutlineCash, public: false, admin: false },
+  // Don't show navigation on auth pages
+  if (['/login', '/register', '/admin/login'].includes(location.pathname)) {
+    return null;
+  }
+
+  // User Navigation Items
+  const userNavItems = [
+    { name: 'Dashboard', path: '/dashboard', icon: HiOutlineChartSquareBar },
+    { name: 'My Investments', path: '/investments', icon: HiOutlineFolder },
+    { name: 'Payments', path: '/payments', icon: HiOutlineCreditCard },
+    { name: 'Withdrawals', path: '/withdrawals', icon: HiOutlineCash },
+    { name: 'Profile', path: '/profile', icon: HiOutlineUser },
   ];
 
-  const adminLinks = [
-    { name: 'Admin', path: '/admin', icon: HiOutlineUser, public: false, admin: true },
-    { name: 'Users', path: '/admin/users', icon: HiOutlineUser, public: false, admin: true },
-    { name: 'Withdrawals', path: '/admin/withdrawals', icon: HiOutlineCash, public: false, admin: true },
+  // Public Navigation Items
+  const publicNavItems = [
+    { name: 'Home', path: '/', icon: HiOutlineHome },
   ];
 
-  const filteredLinks = navLinks.filter(link => {
-    if (link.public) return true;
-    if (!isAuthenticated) return false;
-    if (link.admin && !isAdmin) return false;
-    return true;
-  });
-
-  const isActivePath = (path) => {
-    return location.pathname === path;
-  };
+  const navItems = !isAuthenticated ? publicNavItems : userNavItems;
 
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-primestone-600 to-primestone-800 shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo and brand */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-primestone-600 to-primestone-800 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">P</span>
-              </div>
-              <span className="font-display font-bold text-xl text-primestone-900 hidden sm:block">
+        <div className="flex justify-between h-16 items-center">
+          {/* Logo */}
+          <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg border-2 border-[#FFD700] relative overflow-hidden animate-float">
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-30 transform rotate-45 animate-shine"></div>
+              <span className="text-primestone-800 font-bold text-lg relative z-10">P</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-lg text-white leading-tight">
                 PrimeStone
               </span>
-            </Link>
-          </div>
+              <span className="text-xs text-primestone-200 font-medium tracking-wide leading-tight">
+                Secure Investment Platform
+              </span>
+            </div>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            {filteredLinks.map((link) => (
+          <div className="hidden md:flex items-center space-x-1">
+            {navItems.map((item) => (
               <Link
-                key={link.path}
-                to={link.path}
-                className={`nav-link flex items-center space-x-1 ${
-                  isActivePath(link.path) ? 'nav-link-active' : ''
+                key={item.path}
+                to={item.path}
+                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === item.path
+                    ? 'bg-white text-primestone-600'
+                    : 'text-white hover:bg-white/10'
                 }`}
               >
-                <link.icon className="w-5 h-5" />
-                <span>{link.name}</span>
+                <item.icon className="w-4 h-4 mr-2" />
+                {item.name}
               </Link>
             ))}
-
-            {isAdmin && (
-              <div className="relative group">
-                <button className="nav-link flex items-center space-x-1">
-                  <HiOutlineUser className="w-5 h-5" />
-                  <span>Admin</span>
-                </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl hidden group-hover:block hover:block">
-                  {adminLinks.map((link) => (
-                    <Link
-                      key={link.path}
-                      to={link.path}
-                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-primestone-50 hover:text-primestone-600"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <link.icon className="w-4 h-4" />
-                        <span>{link.name}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Theme toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-primestone-50 transition-colors"
-            >
-              {darkMode ? (
-                <HiOutlineSun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <HiOutlineMoon className="w-5 h-5 text-primestone-600" />
-              )}
-            </button>
-
-            {/* Notifications (if authenticated) */}
-            {isAuthenticated && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="p-2 rounded-lg hover:bg-primestone-50 transition-colors relative"
-                >
-                  <HiOutlineBell className="w-5 h-5 text-primestone-600" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
-                </button>
-                
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-neutral-200">
-                    <div className="p-4 border-b border-neutral-200">
-                      <h3 className="font-semibold text-neutral-800">Notifications</h3>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      <div className="p-4 hover:bg-primestone-50 cursor-pointer">
-                        <p className="text-sm text-neutral-600">Your investment has matured</p>
-                        <p className="text-xs text-neutral-400 mt-1">2 hours ago</p>
-                      </div>
-                      <div className="p-4 hover:bg-primestone-50 cursor-pointer">
-                        <p className="text-sm text-neutral-600">Payment received: $500</p>
-                        <p className="text-xs text-neutral-400 mt-1">Yesterday</p>
-                      </div>
-                    </div>
-                    <div className="p-2 border-t border-neutral-200">
-                      <button className="text-sm text-primestone-600 hover:text-primestone-800 w-full text-center">
-                        View all
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* User menu or Auth buttons */}
-            {isAuthenticated ? (
-              <div className="relative group">
-                <button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-primestone-50 transition-colors">
-                  <div className="w-8 h-8 bg-gradient-to-r from-primestone-500 to-primestone-700 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold">
-                      {user?.username?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="text-neutral-700">{user?.username}</span>
-                </button>
-                
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl hidden group-hover:block hover:block">
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-primestone-50 hover:text-primestone-600"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <HiOutlineUser className="w-4 h-4" />
-                      <span>Profile</span>
-                    </div>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-primestone-50 hover:text-primestone-600"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <HiOutlineLogout className="w-4 h-4" />
-                      <span>Logout</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-primestone-600 hover:text-primestone-700 font-medium"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="btn-primary"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-primestone-50 transition-colors"
-            >
-              {darkMode ? (
-                <HiOutlineSun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <HiOutlineMoon className="w-5 h-5 text-primestone-600" />
-              )}
-            </button>
             
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-lg hover:bg-primestone-50 transition-colors"
-            >
-              {isOpen ? (
-                <HiOutlineX className="w-6 h-6 text-primestone-600" />
-              ) : (
-                <HiOutlineMenu className="w-6 h-6 text-primestone-600" />
-              )}
-            </button>
+            {isAuthenticated && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-3 py-2 ml-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors"
+              >
+                <HiOutlineLogout className="w-4 h-4 mr-2" />
+                Logout
+              </button>
+            )}
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-primestone-700 transition-colors"
+          >
+            {isMenuOpen ? (
+              <HiOutlineX className="w-6 h-6 text-white" />
+            ) : (
+              <HiOutlineMenu className="w-6 h-6 text-white" />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t border-neutral-200">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {filteredLinks.map((link) => (
+      {/* Mobile Menu Dropdown */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-primestone-700 border-t border-primestone-600">
+          <div className="px-2 py-3 space-y-1">
+            {navItems.map((item) => (
               <Link
-                key={link.path}
-                to={link.path}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  isActivePath(link.path)
-                    ? 'bg-primestone-50 text-primestone-600'
-                    : 'text-neutral-600 hover:bg-primestone-50 hover:text-primestone-600'
-                }`}
-                onClick={() => setIsOpen(false)}
+                key={item.path}
+                to={item.path}
+                className="flex items-center px-3 py-3 rounded-md text-base font-medium text-white hover:bg-primestone-600 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
               >
-                <div className="flex items-center space-x-2">
-                  <link.icon className="w-5 h-5" />
-                  <span>{link.name}</span>
-                </div>
+                <item.icon className="w-5 h-5 mr-3" />
+                {item.name}
               </Link>
             ))}
-
-            {isAdmin && adminLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  isActivePath(link.path)
-                    ? 'bg-primestone-50 text-primestone-600'
-                    : 'text-neutral-600 hover:bg-primestone-50 hover:text-primestone-600'
-                }`}
-                onClick={() => setIsOpen(false)}
+            
+            {isAuthenticated && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-3 py-3 rounded-md text-base font-medium text-white hover:bg-primestone-600 transition-colors"
               >
-                <div className="flex items-center space-x-2">
-                  <link.icon className="w-5 h-5" />
-                  <span>{link.name}</span>
-                </div>
-              </Link>
-            ))}
-
-            {isAuthenticated ? (
-              <>
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:bg-primestone-50 hover:text-primestone-600"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <HiOutlineUser className="w-5 h-5" />
-                    <span>Profile</span>
-                  </div>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-neutral-600 hover:bg-primestone-50 hover:text-primestone-600"
-                >
-                  <div className="flex items-center space-x-2">
-                    <HiOutlineLogout className="w-5 h-5" />
-                    <span>Logout</span>
-                  </div>
-                </button>
-              </>
-            ) : (
-              <div className="px-3 py-2 space-y-2">
-                <Link
-                  to="/login"
-                  className="block w-full text-center px-4 py-2 border border-primestone-600 text-primestone-600 rounded-lg font-medium"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="block w-full text-center btn-primary"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Get Started
-                </Link>
-              </div>
+                <HiOutlineLogout className="w-5 h-5 mr-3" />
+                Logout
+              </button>
             )}
           </div>
         </div>

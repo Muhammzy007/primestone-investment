@@ -10,7 +10,8 @@ import {
   HiOutlineShieldCheck,
   HiOutlineArrowRight,
   HiOutlineCheckCircle,
-  HiOutlineXCircle
+  HiOutlineXCircle,
+  HiOutlineArrowLeft
 } from 'react-icons/hi';
 
 const Register = () => {
@@ -42,15 +43,10 @@ const Register = () => {
       [name]: value
     });
     
-    // Clear error for this field
     if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
+      setErrors({ ...errors, [name]: '' });
     }
 
-    // Check password strength if password field changes
     if (name === 'password') {
       checkPasswordStrength(value);
     }
@@ -77,60 +73,37 @@ const Register = () => {
     return score;
   };
 
-  const getPasswordStrengthColor = () => {
-    const score = passwordStrength.score;
-    if (score <= 2) return 'bg-error';
-    if (score <= 3) return 'bg-warning';
-    if (score <= 4) return 'bg-primestone-400';
-    return 'bg-success';
-  };
-
-  const getPasswordStrengthText = () => {
-    const score = passwordStrength.score;
-    if (score <= 2) return 'Weak';
-    if (score <= 3) return 'Fair';
-    if (score <= 4) return 'Good';
-    return 'Strong';
-  };
-
   const validateForm = () => {
     const newErrors = {};
     
-    // Username validation
     if (!formData.username) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {
       newErrors.username = 'Username must be at least 3 characters';
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, and underscores';
     }
 
-    // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else {
-      const strength = passwordStrength;
-      if (!strength.minLength) {
+      if (!passwordStrength.minLength) {
         newErrors.password = 'Password must be at least 8 characters';
-      } else if (!strength.hasUpper) {
+      } else if (!passwordStrength.hasUpper) {
         newErrors.password = 'Password must contain at least one uppercase letter';
-      } else if (!strength.hasLower) {
+      } else if (!passwordStrength.hasLower) {
         newErrors.password = 'Password must contain at least one lowercase letter';
-      } else if (!strength.hasNumber) {
+      } else if (!passwordStrength.hasNumber) {
         newErrors.password = 'Password must contain at least one number';
-      } else if (!strength.hasSpecial) {
+      } else if (!passwordStrength.hasSpecial) {
         newErrors.password = 'Password must contain at least one special character';
       }
     }
 
-    // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
@@ -161,8 +134,14 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primestone-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header with Logo */}
+      <div className="max-w-md w-full space-y-8 bg-white rounded-2xl shadow-2xl p-8">
+        {/* Back to Home Button */}
+        <Link to="/" className="inline-flex items-center text-primestone-600 hover:text-primestone-700 mb-4">
+          <HiOutlineArrowLeft className="w-5 h-5 mr-2" />
+          Back to Home
+        </Link>
+        
+        {/* Header with Animated Logo */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="w-20 h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg border-2 border-[#FFD700] relative overflow-hidden animate-float">
@@ -198,7 +177,7 @@ const Register = () => {
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-3 py-3 border ${
                     errors.username ? 'border-error' : 'border-neutral-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent transition-colors duration-200`}
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent`}
                   placeholder="johndoe"
                 />
               </div>
@@ -220,12 +199,11 @@ const Register = () => {
                   id="email"
                   name="email"
                   type="email"
-                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-3 py-3 border ${
                     errors.email ? 'border-error' : 'border-neutral-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent transition-colors duration-200`}
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent`}
                   placeholder="you@example.com"
                 />
               </div>
@@ -251,7 +229,7 @@ const Register = () => {
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-10 py-3 border ${
                     errors.password ? 'border-error' : 'border-neutral-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent transition-colors duration-200`}
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent`}
                   placeholder="••••••••"
                 />
                 <button
@@ -260,9 +238,9 @@ const Register = () => {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   {showPassword ? (
-                    <HiOutlineEyeOff className="h-5 w-5 text-neutral-400 hover:text-primestone-600 transition-colors" />
+                    <HiOutlineEyeOff className="h-5 w-5 text-neutral-400 hover:text-primestone-600" />
                   ) : (
-                    <HiOutlineEye className="h-5 w-5 text-neutral-400 hover:text-primestone-600 transition-colors" />
+                    <HiOutlineEye className="h-5 w-5 text-neutral-400 hover:text-primestone-600" />
                   )}
                 </button>
               </div>
@@ -278,17 +256,23 @@ const Register = () => {
                       passwordStrength.score <= 4 ? 'text-primestone-400' :
                       'text-success'
                     }`}>
-                      {getPasswordStrengthText()}
+                      {passwordStrength.score <= 2 ? 'Weak' :
+                       passwordStrength.score <= 3 ? 'Fair' :
+                       passwordStrength.score <= 4 ? 'Good' : 'Strong'}
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`}
+                      className={`h-full ${
+                        passwordStrength.score <= 2 ? 'bg-error' :
+                        passwordStrength.score <= 3 ? 'bg-warning' :
+                        passwordStrength.score <= 4 ? 'bg-primestone-400' :
+                        'bg-success'
+                      } transition-all duration-300`}
                       style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                     ></div>
                   </div>
                   
-                  {/* Password Requirements */}
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="flex items-center space-x-1">
                       {passwordStrength.minLength ? (
@@ -355,7 +339,7 @@ const Register = () => {
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-10 py-3 border ${
                     errors.confirmPassword ? 'border-error' : 'border-neutral-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent transition-colors duration-200`}
+                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent`}
                   placeholder="••••••••"
                 />
                 <button
@@ -364,9 +348,9 @@ const Register = () => {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   {showConfirmPassword ? (
-                    <HiOutlineEyeOff className="h-5 w-5 text-neutral-400 hover:text-primestone-600 transition-colors" />
+                    <HiOutlineEyeOff className="h-5 w-5 text-neutral-400 hover:text-primestone-600" />
                   ) : (
-                    <HiOutlineEye className="h-5 w-5 text-neutral-400 hover:text-primestone-600 transition-colors" />
+                    <HiOutlineEye className="h-5 w-5 text-neutral-400 hover:text-primestone-600" />
                   )}
                 </button>
               </div>
@@ -384,19 +368,19 @@ const Register = () => {
                 name="terms"
                 type="checkbox"
                 required
-                className="h-4 w-4 text-primestone-600 focus:ring-primestone-500 border-neutral-300 rounded transition-colors"
+                className="h-4 w-4 text-primestone-600 focus:ring-primestone-500 border-neutral-300 rounded"
               />
             </div>
             <div className="ml-3 text-sm">
               <label htmlFor="terms" className="text-neutral-600">
                 I agree to the{' '}
-                <a href="#" className="font-medium text-primestone-600 hover:text-primestone-500 transition-colors">
+                <Link to="/terms" className="font-medium text-primestone-600 hover:text-primestone-500">
                   Terms of Service
-                </a>{' '}
+                </Link>{' '}
                 and{' '}
-                <a href="#" className="font-medium text-primestone-600 hover:text-primestone-500 transition-colors">
+                <Link to="/privacy" className="font-medium text-primestone-600 hover:text-primestone-500">
                   Privacy Policy
-                </a>
+                </Link>
               </label>
             </div>
           </div>
@@ -406,7 +390,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primestone-600 to-primestone-700 hover:from-primestone-700 hover:to-primestone-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primestone-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
+              className="w-full bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-3 px-4 rounded-lg font-medium hover:from-primestone-700 hover:to-primestone-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primestone-500 disabled:opacity-50 flex items-center justify-center"
             >
               {loading ? (
                 <span className="flex items-center">
@@ -417,27 +401,17 @@ const Register = () => {
                   Creating account...
                 </span>
               ) : (
-                <span className="flex items-center justify-center">
-                  Create Account <HiOutlineArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <span className="flex items-center">
+                  Create Account <HiOutlineArrowRight className="ml-2 h-5 w-5" />
                 </span>
               )}
             </button>
           </div>
 
-          {/* Login Link */}
           <div className="text-center">
-            <p className="text-sm text-neutral-600">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-primestone-600 hover:text-primestone-500 transition-colors">
-                Sign in
-              </Link>
-            </p>
-          </div>
-
-          {/* Security Note */}
-          <div className="flex items-center justify-center space-x-2 text-xs text-neutral-500 pt-4">
-            <HiOutlineShieldCheck className="h-4 w-4 text-primestone-400" />
-            <span>Your information is protected by 256-bit encryption</span>
+            <Link to="/login" className="text-sm text-primestone-600 hover:text-primestone-500">
+              Already have an account? Sign in
+            </Link>
           </div>
         </form>
       </div>

@@ -1,0 +1,10 @@
+{
+  "name": "primestone-investment",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.3"
+  }
+}

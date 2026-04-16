@@ -1,401 +1,276 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { 
-  HiOutlineShieldCheck, 
-  HiOutlineChartBar, 
-  HiOutlineClock, 
-  HiOutlineCash,
-  HiOutlineArrowRight,
-  HiOutlineCheckCircle,
-  HiOutlineUserGroup,
-  HiOutlineGlobe,
-  HiOutlineLockClosed
-} from 'react-icons/hi';
-import axios from 'axios';
+import { HiOutlineShieldCheck, HiOutlineChartBar, HiOutlineCash, HiOutlineRefresh, HiOutlineArrowRight, HiOutlineCreditCard } from 'react-icons/hi';
 
 const Home = () => {
-  const { isAuthenticated } = useAuth();
-  const [packages, setPackages] = useState([]);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalInvested: 0,
-    totalPaid: 0,
-    countries: 0
-  });
-
-  useEffect(() => {
-    fetchPackages();
-    fetchStats();
-  }, []);
-
-  const fetchPackages = async () => {
-    try {
-      const response = await axios.get('/api/investments/packages');
-      setPackages(response.data.data);
-    } catch (error) {
-      console.error('Error fetching packages:', error);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await axios.get('/api/public/stats');
-      setStats(response.data.data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-primestone-50 to-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primestone-600 to-primestone-800 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white rounded-full opacity-10"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white rounded-full opacity-10"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8 fade-in">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-                Grow Your Wealth with{' '}
-                <span className="text-yellow-300">PrimeStone</span>
-              </h1>
-              <p className="text-xl text-primestone-100">
-                Secure, transparent, and profitable investment opportunities. 
-                Start your journey to financial freedom today.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                {isAuthenticated ? (
-                  <Link to="/dashboard" className="btn-primary text-center">
-                    Go to Dashboard
-                  </Link>
-                ) : (
-                  <>
-                    <Link to="/register" className="btn-primary text-center">
-                      Get Started Now
-                    </Link>
-                    <Link to="/login" className="btn-secondary text-center">
-                      Sign In
-                    </Link>
-                  </>
-                )}
-              </div>
-              
-              {/* Trust badges */}
-              <div className="flex items-center space-x-6 pt-4">
-                <div className="flex items-center space-x-2">
-                  <HiOutlineShieldCheck className="w-6 h-6 text-yellow-300" />
-                  <span className="text-sm">Secured</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <HiOutlineLockClosed className="w-6 h-6 text-yellow-300" />
-                  <span className="text-sm">Encrypted</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <HiOutlineGlobe className="w-6 h-6 text-yellow-300" />
-                  <span className="text-sm">Global</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="hidden md:block">
-              <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8">
-                <div className="text-center">
-                  <div className="text-5xl font-bold mb-2">200%</div>
-                  <p className="text-primestone-200">Average Returns</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">${stats.totalInvested}M+</div>
-                    <p className="text-sm text-primestone-200">Invested</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{stats.totalUsers}K+</div>
-                    <p className="text-sm text-primestone-200">Investors</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">${stats.totalPaid}M</div>
-                    <p className="text-sm text-primestone-200">Paid Out</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{stats.countries}+</div>
-                    <p className="text-sm text-primestone-200">Countries</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900 mb-4">
-              Why Choose PrimeStone?
-            </h2>
-            <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              We combine security, transparency, and profitability to give you the best investment experience.
+      <div className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-display font-bold text-primestone-900 leading-tight">
+              Grow Your Wealth with{' '}
+              <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
+                PrimeStone
+              </span>
+            </h1>
+            <p className="mt-6 text-xl text-neutral-600 max-w-2xl mx-auto">
+              Secure investment platform offering high returns on USDT investments. Start with as low as $500 and watch your money grow.
             </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="card p-8 text-center">
-              <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <HiOutlineShieldCheck className="w-8 h-8 text-primestone-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Secure & Safe</h3>
-              <p className="text-neutral-600">
-                Your investments are protected with bank-level security and blockchain verification.
-              </p>
-            </div>
-
-            <div className="card p-8 text-center">
-              <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <HiOutlineChartBar className="w-8 h-8 text-primestone-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">High Returns</h3>
-              <p className="text-neutral-600">
-                Earn up to 200% returns on your investments with our proven investment strategies.
-              </p>
-            </div>
-
-            <div className="card p-8 text-center">
-              <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <HiOutlineClock className="w-8 h-8 text-primestone-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Flexible Terms</h3>
-              <p className="text-neutral-600">
-                Start with as low as $50 and choose from multiple investment packages.
-              </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/register" className="btn-primary text-lg px-8 py-3">
+                Get Started
+                <HiOutlineArrowRight className="ml-2 w-5 h-5 inline" />
+              </Link>
+              <Link to="/about" className="btn-secondary text-lg px-8 py-3">
+                Learn More
+              </Link>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Investment Packages */}
-      <section className="py-20 bg-gradient-to-b from-primestone-50 to-white">
+      {/* Why Choose PrimeStone */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900">
+            Why Choose PrimeStone
+          </h2>
+          <p className="mt-4 text-xl text-neutral-600 max-w-2xl mx-auto">
+            Start your investment journey with as low as $500 and earn daily yields
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HiOutlineShieldCheck className="w-8 h-8 text-primestone-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-primestone-800 mb-2">Secure & Safe</h3>
+            <p className="text-neutral-600">Bank-level security with blockchain verification for all transactions</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HiOutlineChartBar className="w-8 h-8 text-primestone-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-primestone-800 mb-2">High Returns</h3>
+            <p className="text-neutral-600">Up to 200% returns on your investment over 6 months</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HiOutlineCash className="w-8 h-8 text-primestone-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-primestone-800 mb-2">Low Entry</h3>
+            <p className="text-neutral-600">Start investing from just $500 with flexible payment options</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HiOutlineRefresh className="w-8 h-8 text-primestone-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-primestone-800 mb-2">Daily Yields</h3>
+            <p className="text-neutral-600">Earn 6.67% daily yields once you reach minimum investment</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Investment Packages Preview */}
+      <div className="bg-white py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900 mb-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900">
               Investment Packages
             </h2>
-            <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              Choose the package that best suits your investment goals
+            <p className="mt-4 text-xl text-neutral-600">
+              Choose the package that fits your goals
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {packages.map((pkg, index) => (
-              <div key={pkg.id} className="package-card fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <div className="mb-4">
-                  <span className={`badge badge-${pkg.color_class || 'blue'} mb-2`}>
-                    {pkg.package_name}
-                  </span>
-                  <h3 className="text-2xl font-bold text-primestone-900">{pkg.package_name}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Bronze Card */}
+            <div className="border border-neutral-200 rounded-xl hover:shadow-lg transition-shadow flex flex-col h-full">
+              <div className="p-6 flex flex-col h-full">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-amber-700">B</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-primestone-900">Bronze</h3>
+                  <p className="text-3xl font-bold text-primestone-900 mt-2">$500</p>
+                  <p className="text-sm text-neutral-500">Minimum to Yield</p>
                 </div>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">Min Investment</span>
-                    <span className="font-semibold">${pkg.min_investment}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">Max Investment</span>
-                    <span className="font-semibold">${pkg.max_investment}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">Return</span>
-                    <span className="font-semibold text-success">200%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-600">Duration</span>
-                    <span className="font-semibold">30 Days</span>
-                  </div>
+                <div className="flex-1 mt-6">
+                  <ul className="space-y-2 text-sm text-neutral-600">
+                    <li className="flex items-center justify-between">
+                      <span>Returns:</span>
+                      <span className="font-semibold text-green-600">100% (2x)</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Daily Yield:</span>
+                      <span className="font-semibold text-green-600">6.67%</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Term:</span>
+                      <span className="font-semibold">6 Months</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Payments:</span>
+                      <span className="font-semibold">Flexible</span>
+                    </li>
+                  </ul>
                 </div>
-
-                <div className="border-t border-neutral-200 pt-4">
-                  <div className="text-center mb-4">
-                    <span className="text-2xl font-bold text-primestone-600">
-                      ${pkg.min_investment * 3}
-                    </span>
-                    <span className="text-neutral-500 text-sm block">Expected Return</span>
-                  </div>
-                  
-                  <Link
-                    to={isAuthenticated ? "/investments" : "/register"}
-                    className="btn-primary w-full text-center block"
-                  >
-                    {isAuthenticated ? 'Invest Now' : 'Get Started'}
+                <div className="mt-6">
+                  <Link to="/register" className="bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-2 px-4 rounded-lg font-medium hover:from-primestone-700 hover:to-primestone-800 transition-all duration-300 w-full text-center block">
+                    Get Started
                   </Link>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900 mb-4">
-              How It Works
-            </h2>
-            <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              Three simple steps to start your investment journey
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="relative">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primestone-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  1
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Create Account</h3>
-                <p className="text-neutral-600">
-                  Sign up for free and verify your email to get started.
-                </p>
-              </div>
-              {index < 2 && (
-                <div className="hidden md:block absolute top-8 left-full w-full border-t-2 border-dashed border-primestone-200"></div>
-              )}
             </div>
 
-            <div className="relative">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primestone-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  2
+            {/* Silver Card */}
+            <div className="border border-neutral-200 rounded-xl hover:shadow-lg transition-shadow flex flex-col h-full">
+              <div className="p-6 flex flex-col h-full">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-gray-600">S</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-primestone-900">Silver</h3>
+                  <p className="text-3xl font-bold text-primestone-900 mt-2">$2,000</p>
+                  <p className="text-sm text-neutral-500">Minimum to Yield</p>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Choose Package</h3>
-                <p className="text-neutral-600">
-                  Select an investment package that matches your goals.
-                </p>
+                <div className="flex-1 mt-6">
+                  <ul className="space-y-2 text-sm text-neutral-600">
+                    <li className="flex items-center justify-between">
+                      <span>Returns:</span>
+                      <span className="font-semibold text-green-600">100% (2x)</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Daily Yield:</span>
+                      <span className="font-semibold text-green-600">6.67%</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Term:</span>
+                      <span className="font-semibold">6 Months</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Payments:</span>
+                      <span className="font-semibold">Flexible</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-6">
+                  <Link to="/register" className="bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-2 px-4 rounded-lg font-medium hover:from-primestone-700 hover:to-primestone-800 transition-all duration-300 w-full text-center block">
+                    Get Started
+                  </Link>
+                </div>
               </div>
             </div>
 
-            <div className="relative">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primestone-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  3
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Start Earning</h3>
-                <p className="text-neutral-600">
-                  Make payments and watch your investment grow daily.
-                </p>
+            {/* Gold Card - Popular */}
+            <div className="border-2 border-yellow-400 rounded-xl hover:shadow-lg transition-shadow relative flex flex-col h-full">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                POPULAR
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 bg-gradient-to-b from-white to-primestone-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900 mb-4">
-              What Our Investors Say
-            </h2>
-            <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              Join thousands of satisfied investors who trust PrimeStone
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="card p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primestone-100 rounded-full flex items-center justify-center">
-                  <HiOutlineUserGroup className="w-6 h-6 text-primestone-600" />
+              <div className="p-6 flex flex-col h-full">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-yellow-700">G</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-primestone-900">Gold</h3>
+                  <p className="text-3xl font-bold text-primestone-900 mt-2">$4,000</p>
+                  <p className="text-sm text-neutral-500">Minimum to Yield</p>
                 </div>
-                <div className="ml-3">
-                  <h4 className="font-semibold">John Smith</h4>
-                  <p className="text-sm text-neutral-500">Investor since 2023</p>
+                <div className="flex-1 mt-6">
+                  <ul className="space-y-2 text-sm text-neutral-600">
+                    <li className="flex items-center justify-between">
+                      <span>Returns:</span>
+                      <span className="font-semibold text-green-600">200% (3x)</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Daily Yield:</span>
+                      <span className="font-semibold text-green-600">6.67%</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Term:</span>
+                      <span className="font-semibold">6 Months</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Payments:</span>
+                      <span className="font-semibold">Flexible</span>
+                    </li>
+                  </ul>
                 </div>
-              </div>
-              <p className="text-neutral-600">
-                "PrimeStone has transformed my investment portfolio. The returns are consistent and the platform is incredibly easy to use."
-              </p>
-              <div className="mt-4 flex text-yellow-400">
-                {"★★★★★".split('').map((star, i) => (
-                  <span key={i}>{star}</span>
-                ))}
+                <div className="mt-6">
+                  <Link to="/register" className="bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-2 px-4 rounded-lg font-medium hover:from-primestone-700 hover:to-primestone-800 transition-all duration-300 w-full text-center block">
+                    Get Started
+                  </Link>
+                </div>
               </div>
             </div>
 
-            <div className="card p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primestone-100 rounded-full flex items-center justify-center">
-                  <HiOutlineUserGroup className="w-6 h-6 text-primestone-600" />
+            {/* Platinum Card */}
+            <div className="border border-neutral-200 rounded-xl hover:shadow-lg transition-shadow flex flex-col h-full">
+              <div className="p-6 flex flex-col h-full">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-purple-700">P</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-primestone-900">Platinum</h3>
+                  <p className="text-3xl font-bold text-primestone-900 mt-2">$8,000</p>
+                  <p className="text-sm text-neutral-500">Minimum to Yield</p>
                 </div>
-                <div className="ml-3">
-                  <h4 className="font-semibold">Sarah Johnson</h4>
-                  <p className="text-sm text-neutral-500">Investor since 2024</p>
+                <div className="flex-1 mt-6">
+                  <ul className="space-y-2 text-sm text-neutral-600">
+                    <li className="flex items-center justify-between">
+                      <span>Returns:</span>
+                      <span className="font-semibold text-green-600">200% (3x)</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Daily Yield:</span>
+                      <span className="font-semibold text-green-600">6.67%</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Term:</span>
+                      <span className="font-semibold">6 Months</span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Payments:</span>
+                      <span className="font-semibold">Flexible</span>
+                    </li>
+                  </ul>
                 </div>
-              </div>
-              <p className="text-neutral-600">
-                "The transparency and security of this platform is unmatched. I love being able to track my investments in real-time."
-              </p>
-              <div className="mt-4 flex text-yellow-400">
-                {"★★★★★".split('').map((star, i) => (
-                  <span key={i}>{star}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="card p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primestone-100 rounded-full flex items-center justify-center">
-                  <HiOutlineUserGroup className="w-6 h-6 text-primestone-600" />
+                <div className="mt-6">
+                  <Link to="/register" className="bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-2 px-4 rounded-lg font-medium hover:from-primestone-700 hover:to-primestone-800 transition-all duration-300 w-full text-center block">
+                    Get Started
+                  </Link>
                 </div>
-                <div className="ml-3">
-                  <h4 className="font-semibold">Michael Chen</h4>
-                  <p className="text-sm text-neutral-500">Investor since 2023</p>
-                </div>
-              </div>
-              <p className="text-neutral-600">
-                "Great returns and excellent customer support. The withdrawal process is smooth and timely."
-              </p>
-              <div className="mt-4 flex text-yellow-400">
-                {"★★★★★".split('').map((star, i) => (
-                  <span key={i}>{star}</span>
-                ))}
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primestone-600 to-primestone-800">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">
-            Ready to Start Your Investment Journey?
+      <div className="bg-gradient-to-r from-primestone-800 to-primestone-900 py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-white">
+            Ready to Start Your Journey?
           </h2>
-          <p className="text-xl text-primestone-100 mb-8">
-            Join PrimeStone today and take the first step towards financial freedom.
+          <p className="mt-4 text-xl text-primestone-200 max-w-2xl mx-auto">
+            Join thousands of investors already growing their wealth with PrimeStone
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isAuthenticated ? (
-              <Link to="/investments" className="btn-primary bg-white text-primestone-600 hover:bg-primestone-50">
-                Explore Investments
-              </Link>
-            ) : (
-              <>
-                <Link to="/register" className="btn-primary bg-white text-primestone-600 hover:bg-primestone-50">
-                  Create Free Account
-                </Link>
-                <Link to="/login" className="btn-secondary border-white text-white hover:bg-white hover:text-primestone-600">
-                  Sign In
-                </Link>
-              </>
-            )}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/register" className="bg-[#FFD700] text-primestone-900 px-8 py-3 rounded-lg font-semibold hover:bg-[#FFD700]/90 transition-colors">
+              Create Free Account
+            </Link>
+            <Link to="/about" className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors">
+              Learn More
+            </Link>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };
