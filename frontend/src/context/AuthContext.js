@@ -43,34 +43,27 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
       
       if (response.data && response.data.success === true) {
-        // The API returns { token, user } not { accessToken, refreshToken }
         const { token, user: userData } = response.data.data;
 
         // Save token
         localStorage.setItem('token', token);
 
-        if (isAdminLogin) {
-          if (userData.role !== 'admin') {
-            toast.error('Access denied. Admin privileges required.');
-            return { success: false };
-          }
+        if (isAdminLogin || userData.role === 'admin') {
           setAdmin(userData);
           toast.success('Admin login successful!');
+          // Force redirect using window.location
           window.location.href = '/admin';
           return { success: true };
         } else {
-          if (userData.role !== 'user') {
-            toast.error('Invalid user account');
-            return { success: false };
-          }
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
+          // Force redirect using window.location
           window.location.href = '/dashboard';
           return { success: true };
         }
       } else {
         toast.error(response.data?.error || 'Login failed');
-        return { success: false };
+        return { success: false, error: response.data?.error };
       }
     } catch (error) {
       console.error('Login error:', error);

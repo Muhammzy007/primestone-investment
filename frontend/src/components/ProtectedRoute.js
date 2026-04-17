@@ -7,58 +7,36 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const isAdminRoute = location.pathname.startsWith('/admin');
+    const token = localStorage.getItem('token');
+    const isAdminRoute = location.pathname.startsWith('/admin');
 
-      // Admin route protection
+    if (!token) {
       if (isAdminRoute) {
-        const adminSession = sessionStorage.getItem('admin_session');
-        const adminToken = sessionStorage.getItem('admin_access_token');
-
-        if (adminSession && adminToken) {
-          try {
-            const adminData = JSON.parse(adminSession);
-            if (adminData.role === 'admin') {
-              setAuthorized(true);
-              setLoading(false);
-              return;
-            }
-          } catch (e) {
-            sessionStorage.removeItem('admin_session');
-            sessionStorage.removeItem('admin_access_token');
-            sessionStorage.removeItem('admin_refresh_token');
-          }
-        }
-        // Not authorized as admin
         window.location.href = '/admin/login';
-      }
-      // User route protection
-      else {
-        const userSession = sessionStorage.getItem('user_session');
-        const userToken = sessionStorage.getItem('user_access_token');
-
-        if (userSession && userToken) {
-          try {
-            const userData = JSON.parse(userSession);
-            if (userData.role === 'user') {
-              setAuthorized(true);
-              setLoading(false);
-              return;
-            }
-          } catch (e) {
-            sessionStorage.removeItem('user_session');
-            sessionStorage.removeItem('user_access_token');
-            sessionStorage.removeItem('user_refresh_token');
-          }
-        }
-        // Not authorized as user
+      } else {
         window.location.href = '/login';
       }
-      setLoading(false);
-    };
+      return;
+    }
 
-    checkAuth();
-  }, [location.pathname]);
+    // Decode token to check role
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userRole = payload.role;
+      
+      if (adminOnly && userRole !== 'admin') {
+        window.location.href = '/dashboard';
+        return;
+      }
+      
+      setAuthorized(true);
+    } catch (e) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    
+    setLoading(false);
+  }, [location.pathname, adminOnly]);
 
   if (loading) {
     return (

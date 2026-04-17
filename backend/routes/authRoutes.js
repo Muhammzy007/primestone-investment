@@ -7,9 +7,9 @@ const { supabase } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
-// Generate JWT with role included
+// Generate JWT token
 const generateToken = (userId, role) => {
-  return jwt.sign({ userId, role }, JWT_SECRET);
+  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' });
 };
 
 // Register
