@@ -7,32 +7,11 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cC
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// For backward compatibility with existing code
-const pool = {
-  execute: async (query, params) => {
-    // This is a wrapper to make existing MySQL code work with Supabase
-    console.warn('Using compatibility mode. Update your queries to use Supabase directly.');
-    return [[], null];
-  },
-  getConnection: async () => ({
-    execute: async (query, params) => [[], null],
-    release: () => {},
-    beginTransaction: async () => {},
-    commit: async () => {},
-    rollback: async () => {}
-  })
-};
+// Test connection on startup
+supabase.from('users').select('count').then(() => {
+  console.log('✅ Supabase connected successfully');
+}).catch(err => {
+  console.error('❌ Supabase connection error:', err.message);
+});
 
-const testConnection = async () => {
-  try {
-    const { data, error } = await supabase.from('users').select('count');
-    if (error) throw error;
-    console.log('✅ Supabase connected successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Supabase connection failed:', error.message);
-    return false;
-  }
-};
-
-module.exports = { pool, supabase, testConnection };
+module.exports = { supabase };
