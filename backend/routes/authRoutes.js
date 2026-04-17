@@ -7,6 +7,11 @@ const { supabase } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
+// Generate JWT
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, JWT_SECRET);
+};
+
 // Register
 router.post('/register', [
   body('username').isLength({ min: 3 }),
@@ -42,7 +47,7 @@ router.post('/register', [
 
     if (error) throw error;
 
-    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET);
+    const token = generateToken(newUser.id);
 
     res.json({
       success: true,
@@ -85,7 +90,7 @@ router.post('/login', [
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+    const token = generateToken(user.id);
 
     res.json({
       success: true,
@@ -97,6 +102,31 @@ router.post('/login', [
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get current user (for token validation)
+router.get('/me', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, username, email, role, created_at')
+      .eq('id', decoded.userId)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(401).json({ success: false, error: 'Invalid token' });
   }
 });
 
