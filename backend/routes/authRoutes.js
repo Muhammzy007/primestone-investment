@@ -7,9 +7,9 @@ const { supabase } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
-// Generate JWT
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET);
+// Generate JWT with role included
+const generateToken = (userId, role) => {
+  return jwt.sign({ userId, role }, JWT_SECRET);
 };
 
 // Register
@@ -26,7 +26,6 @@ router.post('/register', [
   try {
     const { username, email, password } = req.body;
 
-    // Check if user exists
     const { data: existing } = await supabase
       .from('users')
       .select('id')
@@ -47,7 +46,7 @@ router.post('/register', [
 
     if (error) throw error;
 
-    const token = generateToken(newUser.id);
+    const token = generateToken(newUser.id, 'user');
 
     res.json({
       success: true,
@@ -90,7 +89,7 @@ router.post('/login', [
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     res.json({
       success: true,
@@ -105,7 +104,7 @@ router.post('/login', [
   }
 });
 
-// Get current user (for token validation)
+// Get current user
 router.get('/me', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
