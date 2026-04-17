@@ -20,11 +20,13 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       api.get('/auth/me')
         .then(res => {
-          const userData = res.data.data;
-          if (userData.role === 'admin') {
-            setAdmin(userData);
-          } else {
-            setUser(userData);
+          if (res.data.success) {
+            const userData = res.data.data;
+            if (userData.role === 'admin') {
+              setAdmin(userData);
+            } else {
+              setUser(userData);
+            }
           }
         })
         .catch(() => {
@@ -38,49 +40,41 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, isAdminLogin = false) => {
     try {
-      console.log('Login attempt:', { email, isAdminLogin });
-      
       const response = await api.post('/auth/login', { email, password });
-      console.log('Login response:', response.data);
       
       if (response.data && response.data.success === true) {
-        // FIXED: Your backend sends 'token', not 'accessToken'
+        // The API returns { token, user } not { accessToken, refreshToken }
         const { token, user: userData } = response.data.data;
 
-        // Store token in localStorage
+        // Save token
         localStorage.setItem('token', token);
 
         if (isAdminLogin) {
-          // Admin login
           if (userData.role !== 'admin') {
             toast.error('Access denied. Admin privileges required.');
             return { success: false };
           }
-          
           setAdmin(userData);
           toast.success('Admin login successful!');
           window.location.href = '/admin';
-          return { success: true, user: userData };
+          return { success: true };
         } else {
-          // User login
           if (userData.role !== 'user') {
             toast.error('Invalid user account');
             return { success: false };
           }
-          
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
           window.location.href = '/dashboard';
-          return { success: true, user: userData };
+          return { success: true };
         }
       } else {
-        const errorMsg = response.data?.error || 'Login failed';
-        toast.error(errorMsg);
-        return { success: false, error: errorMsg };
+        toast.error(response.data?.error || 'Login failed');
+        return { success: false };
       }
     } catch (error) {
       console.error('Login error:', error);
-      const message = error.response?.data?.error || 'Login failed. Please check your credentials.';
+      const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
       return { success: false, error: message };
     }
@@ -95,17 +89,16 @@ export const AuthProvider = ({ children }) => {
         
         localStorage.setItem('token', token);
         setUser(userDataResponse);
-        toast.success('Registration successful! Welcome to PrimeStone!');
+        toast.success('Registration successful!');
         window.location.href = '/dashboard';
-        return { success: true, user: userDataResponse };
+        return { success: true };
       } else {
-        const errorMsg = response.data?.error || 'Registration failed';
-        toast.error(errorMsg);
-        return { success: false, error: errorMsg };
+        toast.error(response.data?.error || 'Registration failed');
+        return { success: false };
       }
     } catch (error) {
       console.error('Registration error:', error);
-      const message = error.response?.data?.error || 'Registration failed. Please try again.';
+      const message = error.response?.data?.error || 'Registration failed';
       toast.error(message);
       return { success: false, error: message };
     }

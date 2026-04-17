@@ -8,26 +8,36 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy for rate limiting on Render
 app.set('trust proxy', 1);
 
-// Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://*.netlify.app', 'https://primestone-api.onrender.com'],
-  credentials: true
+  origin: ['http://localhost:3000', 'https://primestone-investment.netlify.app', 'https://primestone-api.onrender.com'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// Routes
+// Routes - mount at both /api and root
 const authRoutes = require('./routes/authRoutes');
 const investmentRoutes = require('./routes/investmentRoutes');
 
+// Mount at /api prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
 
-// Health check
+// Also mount at root for direct access (for testing)
+app.use('/auth', authRoutes);
+app.use('/investments', investmentRoutes);
+
+// Health check at both locations
 app.get('/api/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
