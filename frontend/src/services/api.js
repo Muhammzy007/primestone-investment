@@ -1,12 +1,13 @@
 import axios from 'axios';
 
-// Use relative path for Netlify
+// Replace with your Render backend URL after deployment
+const API_URL = 'https://primestone-api.onrender.com/api';
+
 const api = axios.create({
-  baseURL: '/.netlify/functions/api',
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {

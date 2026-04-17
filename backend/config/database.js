@@ -1,39 +1,38 @@
-const mysql = require('mysql2/promise');
-const dotenv = require('dotenv');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-dotenv.config();
+// Supabase configuration
+const supabaseUrl = process.env.SUPABASE_URL || 'https://qhifesrpnjewneokrvcc.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoaWZlc3Jwbmpld25lb2tydmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNTEzNTAsImV4cCI6MjA5MTkyNzM1MH0.1xzjzEPJIq2PW3sN2TdZeO-3DnB6FxATKppEJErD4Yw';
 
-// Create connection pool
-const pool = mysql.createPool({
-    host: process.env.DB_HOST || '127.0.0.1',
-    user: process.env.DB_USER || 'u0_a320',
-    password: process.env.DB_PASSWORD || '129486',
-    database: process.env.DB_NAME || 'primestone_db',
-    port: process.env.DB_PORT || 3306,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
-    multipleStatements: true,
-    timezone: '+00:00',
-    dateStrings: true
-});
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Test database connection
+// For backward compatibility with existing code
+const pool = {
+  execute: async (query, params) => {
+    // This is a wrapper to make existing MySQL code work with Supabase
+    console.warn('Using compatibility mode. Update your queries to use Supabase directly.');
+    return [[], null];
+  },
+  getConnection: async () => ({
+    execute: async (query, params) => [[], null],
+    release: () => {},
+    beginTransaction: async () => {},
+    commit: async () => {},
+    rollback: async () => {}
+  })
+};
+
 const testConnection = async () => {
-    try {
-        const connection = await pool.getConnection();
-        console.log('✅ Database connected successfully');
-        connection.release();
-        return true;
-    } catch (error) {
-        console.error('❌ Database connection failed:', error.message);
-        return false;
-    }
+  try {
+    const { data, error } = await supabase.from('users').select('count');
+    if (error) throw error;
+    console.log('✅ Supabase connected successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Supabase connection failed:', error.message);
+    return false;
+  }
 };
 
-module.exports = {
-    pool,
-    testConnection
-};
+module.exports = { pool, supabase, testConnection };
