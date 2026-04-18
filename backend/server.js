@@ -9,35 +9,24 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
-
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://primestone-investment.netlify.app', 'https://primestone-api.onrender.com'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+app.use(cors({ origin: ['http://localhost:3000', 'https://primestone-investment.netlify.app', 'https://primestone-api.onrender.com'], credentials: true }));
 app.use(express.json());
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// Routes - mount at both /api and root
+// Routes
 const authRoutes = require('./routes/authRoutes');
 const investmentRoutes = require('./routes/investmentRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const withdrawalRoutes = require('./routes/withdrawalRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
-// Mount at /api prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/admin', adminRoutes);
 
-// Also mount at root for direct access (for testing)
-app.use('/auth', authRoutes);
-app.use('/investments', investmentRoutes);
-
-// Health check at both locations
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
-});
-
-app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
