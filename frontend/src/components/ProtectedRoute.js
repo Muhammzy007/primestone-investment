@@ -10,6 +10,8 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     const token = localStorage.getItem('token');
     const isAdminRoute = location.pathname.startsWith('/admin');
 
+    console.log('ProtectedRoute check:', { tokenExists: !!token, isAdminRoute, adminOnly });
+
     if (!token) {
       if (isAdminRoute) {
         window.location.href = '/admin/login';
@@ -19,20 +21,32 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
       return;
     }
 
-    // Decode token to check role
     try {
+      // Decode token to get role
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userRole = payload.role;
       
-      if (adminOnly && userRole !== 'admin') {
-        window.location.href = '/dashboard';
-        return;
-      }
+      console.log('Token payload:', payload);
+      console.log('User role:', userRole);
       
-      setAuthorized(true);
+      // For admin routes
+      if (isAdminRoute || adminOnly) {
+        if (userRole === 'admin') {
+          setAuthorized(true);
+        } else {
+          console.log('Not admin, redirecting to user dashboard');
+          window.location.href = '/dashboard';
+          return;
+        }
+      } else {
+        // For user routes, allow both user and admin
+        setAuthorized(true);
+      }
     } catch (e) {
+      console.error('Token decode error:', e);
       localStorage.removeItem('token');
       window.location.href = '/login';
+      return;
     }
     
     setLoading(false);

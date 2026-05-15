@@ -18,24 +18,26 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.get('/auth/me')
-        .then(res => {
-          if (res.data.success) {
-            const userData = res.data.data;
-            if (userData.role === 'admin') {
-              setAdmin(userData);
-            } else {
-              setUser(userData);
-            }
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+      // Decode token to get role
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userData = {
+          id: payload.userId,
+          role: payload.role,
+          username: payload.username || 'User'
+        };
+        
+        if (payload.role === 'admin') {
+          setAdmin(userData);
+        } else {
+          setUser(userData);
+        }
+      } catch (e) {
+        console.error('Token decode error:', e);
+        localStorage.removeItem('token');
+      }
     }
+    setLoading(false);
   }, []);
 
   const login = async (email, password, isAdminLogin = false) => {
@@ -44,20 +46,20 @@ export const AuthProvider = ({ children }) => {
       
       if (response.data && response.data.success === true) {
         const { token, user: userData } = response.data.data;
-
-        // Save token
+        
         localStorage.setItem('token', token);
-
-        if (isAdminLogin || userData.role === 'admin') {
+        
+        // Decode token to get role
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        if (userData.role === 'admin' || payload.role === 'admin') {
           setAdmin(userData);
           toast.success('Admin login successful!');
-          // Force redirect using window.location
           window.location.href = '/admin';
           return { success: true };
         } else {
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
-          // Force redirect using window.location
           window.location.href = '/dashboard';
           return { success: true };
         }
