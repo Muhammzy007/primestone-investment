@@ -18,19 +18,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Decode token to get role
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const userData = {
-          id: payload.userId,
-          role: payload.role,
-          username: payload.username || 'User'
-        };
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
         
         if (payload.role === 'admin') {
-          setAdmin(userData);
+          setAdmin({ id: payload.userId, username: payload.username, role: 'admin' });
         } else {
-          setUser(userData);
+          setUser({ id: payload.userId, username: payload.username, role: 'user' });
         }
       } catch (e) {
         console.error('Token decode error:', e);
@@ -49,10 +45,7 @@ export const AuthProvider = ({ children }) => {
         
         localStorage.setItem('token', token);
         
-        // Decode token to get role
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        if (userData.role === 'admin' || payload.role === 'admin') {
+        if (userData.role === 'admin') {
           setAdmin(userData);
           toast.success('Admin login successful!');
           window.location.href = '/admin';
@@ -104,7 +97,12 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setAdmin(null);
     toast.success('Logged out successfully');
-    window.location.href = '/';
+    // Check if current path is admin to redirect to admin login
+    if (window.location.pathname.startsWith('/admin')) {
+      window.location.href = '/admin/login';
+    } else {
+      window.location.href = '/';
+    }
   };
 
   const value = {

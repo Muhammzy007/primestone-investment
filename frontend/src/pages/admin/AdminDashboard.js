@@ -3,85 +3,49 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { HiOutlineUsers, HiOutlineCash, HiOutlineCreditCard, HiOutlineClock, HiOutlineCheckCircle, HiOutlineXCircle, HiOutlineRefresh } from 'react-icons/hi';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const { admin, logout } = useAuth();
-  const [pendingPayments, setPendingPayments] = useState([]);
-  const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
-  const [stats, setStats] = useState({ totalUsers: 0, totalInvestments: 0, totalReceived: 0 });
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    newUsers7d: 0,
+    totalInvestments: 0,
+    activeInvestments: 0,
+    pendingWithdrawals: 0,
+    totalReceived: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (admin) {
-      fetchData();
+      fetchStats();
     }
   }, [admin]);
 
-  const fetchData = async () => {
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setError(null);
-      
-      console.log('Fetching admin data...');
-      
-      const [paymentsRes, withdrawalsRes, statsRes] = await Promise.all([
-        api.get('/payments/admin/pending').catch(err => ({ data: { data: [] } })),
-        api.get('/withdrawals/admin/pending').catch(err => ({ data: { data: [] } })),
-        api.get('/admin/dashboard/stats').catch(err => ({ data: { data: { statistics: {} } } }))
-      ]);
-      
-      setPendingPayments(paymentsRes.data?.data || []);
-      setPendingWithdrawals(withdrawalsRes.data?.data || []);
-      setStats(statsRes.data?.data?.statistics || { totalUsers: 0, totalInvestments: 0, totalReceived: 0 });
-    } catch (err) {
-      console.error('Error fetching admin data:', err);
-      setError('Failed to load admin data');
+      const response = await api.get('/admin/dashboard/stats');
+      console.log('Dashboard stats:', response.data);
+      if (response.data.success) {
+        setStats(response.data.data.statistics || {});
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setError('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleApprovePayment = async (paymentId) => {
-    if (!confirm('Approve this payment?')) return;
-    try {
-      await api.post(`/payments/admin/approve/${paymentId}`);
-      toast.success('Payment approved!');
-      fetchData();
-    } catch (err) {
-      console.error('Failed to approve payment:', err);
-      alert('Failed to approve payment');
-    }
-  };
-
-  const handleApproveWithdrawal = async (withdrawalId) => {
-    if (!confirm('Approve this withdrawal?')) return;
-    try {
-      await api.post(`/withdrawals/admin/approve/${withdrawalId}`);
-      toast.success('Withdrawal approved!');
-      fetchData();
-    } catch (err) {
-      console.error('Failed to approve withdrawal:', err);
-      alert('Failed to approve withdrawal');
-    }
-  };
-
-  const handleRejectWithdrawal = async (withdrawalId) => {
-    const reason = prompt('Reason for rejection:');
-    if (!reason) return;
-    try {
-      await api.post(`/withdrawals/admin/reject/${withdrawalId}`, { reason });
-      toast.success('Withdrawal rejected');
-      fetchData();
-    } catch (err) {
-      console.error('Failed to reject withdrawal:', err);
-      alert('Failed to reject withdrawal');
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center"><div className="spinner mb-4"></div><p>Loading admin dashboard...</p></div>
+        <div className="text-center"><div className="spinner mb-4"></div><p>Loading dashboard...</p></div>
       </div>
     );
   }
@@ -94,93 +58,85 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-display font-bold text-primestone-900">Admin Dashboard</h1>
             <p className="text-neutral-600">Welcome back, {admin?.username || 'Administrator'}</p>
           </div>
-          <button onClick={logout} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Logout</button>
+          <div className="flex space-x-3">
+            <button onClick={fetchStats} className="bg-primestone-100 text-primestone-700 px-4 py-2 rounded-lg hover:bg-primestone-200 flex items-center">
+              <HiOutlineRefresh className="w-4 h-4 mr-1" /> Refresh
+            </button>
+            <button onClick={logout} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Logout</button>
+          </div>
         </div>
 
         {error && (
           <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6 flex justify-between items-center">
             <span>{error}</span>
-            <button onClick={fetchData} className="bg-red-700 text-white px-3 py-1 rounded text-sm">Retry</button>
+            <button onClick={fetchStats} className="bg-red-700 text-white px-3 py-1 rounded text-sm">Retry</button>
           </div>
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center">
-              <div><p className="text-neutral-500">Total Users</p><p className="text-2xl font-bold">{stats.totalUsers || 0}</p></div>
-              <HiOutlineUsers className="w-8 h-8 text-primestone-600" />
+              <div>
+                <p className="text-neutral-500">Total Users</p>
+                <p className="text-3xl font-bold text-primestone-900">{stats.totalUsers || 0}</p>
+                <p className="text-xs text-green-600 mt-1">+{stats.newUsers7d || 0} this week</p>
+              </div>
+              <HiOutlineUsers className="w-10 h-10 text-primestone-600" />
             </div>
           </div>
+
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center">
-              <div><p className="text-neutral-500">Total Investments</p><p className="text-2xl font-bold">{stats.totalInvestments || 0}</p></div>
-              <HiOutlineCreditCard className="w-8 h-8 text-primestone-600" />
+              <div>
+                <p className="text-neutral-500">Total Investments</p>
+                <p className="text-3xl font-bold text-primestone-900">{stats.totalInvestments || 0}</p>
+                <p className="text-xs text-green-600 mt-1">{stats.activeInvestments || 0} active</p>
+              </div>
+              <HiOutlineCreditCard className="w-10 h-10 text-primestone-600" />
             </div>
           </div>
+
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center">
-              <div><p className="text-neutral-500">Total Received</p><p className="text-2xl font-bold">${(stats.totalReceived || 0).toLocaleString()}</p></div>
-              <HiOutlineCash className="w-8 h-8 text-primestone-600" />
+              <div>
+                <p className="text-neutral-500">Total Received</p>
+                <p className="text-3xl font-bold text-green-600">${(stats.totalReceived || 0).toLocaleString()}</p>
+              </div>
+              <HiOutlineCash className="w-10 h-10 text-primestone-600" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-neutral-500">Pending Withdrawals</p>
+                <p className="text-3xl font-bold text-yellow-600">{stats.pendingWithdrawals || 0}</p>
+              </div>
+              <HiOutlineClock className="w-10 h-10 text-primestone-600" />
             </div>
           </div>
         </div>
 
-        {/* Pending Payments */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Pending Payments ({pendingPayments.length})</h2>
-          {pendingPayments.length === 0 ? (
-            <p className="text-neutral-500">No pending payments</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-neutral-50">
-                  <tr><th className="px-4 py-2 text-left">User</th><th className="px-4 py-2 text-left">Amount</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Action</th></tr>
-                </thead>
-                <tbody>
-                  {pendingPayments.map(p => (
-                    <tr key={p.id} className="border-b">
-                      <td className="px-4 py-2">{p.users?.username || p.user_id}</td>
-                      <td className="px-4 py-2">${p.amount}</td>
-                      <td className="px-4 py-2">{new Date(p.created_at).toLocaleDateString()}</td>
-                      <td className="px-4 py-2">
-                        <button onClick={() => handleApprovePayment(p.id)} className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Approve</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* Quick Links */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link to="/admin/users" className="bg-gradient-to-r from-primestone-500 to-primestone-600 text-white rounded-xl p-6 hover:shadow-lg transition-all">
+            <HiOutlineUsers className="w-8 h-8 mb-3" />
+            <h3 className="text-lg font-semibold">Manage Users</h3>
+            <p className="text-sm text-primestone-100 mt-1">View and manage all registered users</p>
+          </Link>
 
-        {/* Pending Withdrawals */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Pending Withdrawals ({pendingWithdrawals.length})</h2>
-          {pendingWithdrawals.length === 0 ? (
-            <p className="text-neutral-500">No pending withdrawals</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-neutral-50">
-                  <tr><th className="px-4 py-2 text-left">User</th><th className="px-4 py-2 text-left">Amount</th><th className="px-4 py-2 text-left">BTC Address</th><th className="px-4 py-2 text-left">Actions</th></tr>
-                </thead>
-                <tbody>
-                  {pendingWithdrawals.map(w => (
-                    <tr key={w.id} className="border-b">
-                      <td className="px-4 py-2">{w.users?.username || w.user_id}</td>
-                      <td className="px-4 py-2">${w.amount}</td>
-                      <td className="px-4 py-2 font-mono text-xs">{w.btc_address?.substring(0, 20)}...</td>
-                      <td className="px-4 py-2">
-                        <button onClick={() => handleApproveWithdrawal(w.id)} className="bg-green-500 text-white px-3 py-1 rounded text-sm mr-2 hover:bg-green-600">Approve</button>
-                        <button onClick={() => handleRejectWithdrawal(w.id)} className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Reject</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <Link to="/admin/withdrawals" className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl p-6 hover:shadow-lg transition-all">
+            <HiOutlineCash className="w-8 h-8 mb-3" />
+            <h3 className="text-lg font-semibold">Withdrawals</h3>
+            <p className="text-sm text-yellow-100 mt-1">Approve or reject withdrawal requests</p>
+          </Link>
+
+          <Link to="/admin/transactions" className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-6 hover:shadow-lg transition-all">
+            <HiOutlineCreditCard className="w-8 h-8 mb-3" />
+            <h3 className="text-lg font-semibold">Transactions</h3>
+            <p className="text-sm text-green-100 mt-1">View all payment transactions</p>
+          </Link>
         </div>
       </div>
     </div>

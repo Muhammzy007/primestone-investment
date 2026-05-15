@@ -4,12 +4,13 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { supabase } = require('../config/database');
+const EmailService = require('../services/emailService');
 
+const emailService = new EmailService();
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
 // Generate JWT token
 const generateToken = (userId, role, username) => {
-  // Ensure role is properly set
   console.log('Generating token for:', { userId, role, username });
   return jwt.sign({ userId, role, username }, JWT_SECRET, { expiresIn: '7d' });
 };
@@ -49,6 +50,14 @@ router.post('/register', [
     if (error) throw error;
 
     const userToken = generateToken(newUser.id, 'user', username);
+
+    // Send welcome email (don't block registration if email fails)
+    try {
+      await emailService.sendWelcomeEmail(email, username);
+      console.log('Welcome email sent to:', email);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError.message);
+    }
 
     res.json({
       success: true,
