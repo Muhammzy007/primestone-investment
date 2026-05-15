@@ -17,7 +17,6 @@ const CreateInvestment = () => {
   const [paymentId, setPaymentId] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  // BTC Wallet Address
   const BTC_ADDRESS = 'bc1qa54zw7f8c7ekp78fpvmqgq4uzexgzfwgfuvvle';
 
   useEffect(() => {
@@ -27,9 +26,19 @@ const CreateInvestment = () => {
   const fetchPackages = async () => {
     try {
       const response = await api.get('/investments/packages');
-      setPackages(response.data.data || []);
-      if (response.data.data && response.data.data.length > 0) {
-        setSelectedPackage(response.data.data[0]);
+      console.log('Packages response:', response.data);
+      // Ensure unique packages by id
+      const uniquePackages = [];
+      const seenIds = new Set();
+      for (const pkg of (response.data.data || [])) {
+        if (!seenIds.has(pkg.id)) {
+          seenIds.add(pkg.id);
+          uniquePackages.push(pkg);
+        }
+      }
+      setPackages(uniquePackages);
+      if (uniquePackages.length > 0) {
+        setSelectedPackage(uniquePackages[0]);
       }
     } catch (error) {
       console.error('Error fetching packages:', error);
@@ -57,17 +66,21 @@ const CreateInvestment = () => {
 
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      console.log('Creating investment with token:', token ? 'Present' : 'Missing');
+      
       const createResponse = await api.post('/investments/create', {
         package_id: selectedPackage.id,
         investment_amount: parseFloat(amount)
       });
 
+      console.log('Investment created:', createResponse.data);
       const investmentId = createResponse.data.data.id;
       setPaymentId(investmentId);
       setShowPayment(true);
       toast.success('Investment created! Please complete payment.');
     } catch (error) {
-      console.error('Error creating investment:', error);
+      console.error('Error creating investment:', error.response?.data || error);
       setError(error.response?.data?.error || 'Failed to create investment');
       toast.error(error.response?.data?.error || 'Failed to create investment');
     } finally {
@@ -149,7 +162,7 @@ const CreateInvestment = () => {
             <div className="bg-yellow-50 p-4 rounded-lg mb-6">
               <p className="text-sm text-yellow-800 font-medium mb-2">⚠️ Important Instructions:</p>
               <ul className="text-xs text-yellow-700 space-y-1">
-                <li>• Send EXACTLY ${amount} BTC to the address above</li>
+                <li>• Send EXACTLY ${amount} USD worth of BTC</li>
                 <li>• After sending, click "I Have Sent the Payment" button</li>
                 <li>• Admin will verify and approve your payment manually</li>
                 <li>• Your investment will be activated after confirmation</li>
@@ -228,7 +241,7 @@ const CreateInvestment = () => {
                 step="0.01"
               />
             </div>
-            <p className="text-xs text-neutral-500 mt-2">Min: $500 | Max: ${selectedPackage?.max_investment}</p>
+            <p className="text-xs text-neutral-500 mt-2">Min: $500 | Max: ${selectedPackage?.max_investment?.toLocaleString()}</p>
           </div>
 
           {amount && selectedPackage && (

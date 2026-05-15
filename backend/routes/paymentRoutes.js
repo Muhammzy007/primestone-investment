@@ -16,6 +16,21 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+const verifyAdmin = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, error: 'No token' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Admin required' });
+    }
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ success: false, error: 'Invalid token' });
+  }
+};
+
 // Get user's payments
 router.get('/my-payments', verifyToken, async (req, res) => {
   try {
@@ -32,21 +47,22 @@ router.get('/my-payments', verifyToken, async (req, res) => {
   }
 });
 
-// Mark payment as sent (manual verification)
+// Mark payment as sent
 router.post('/mark-sent', verifyToken, async (req, res) => {
   try {
     const { investmentId, amount, walletAddress } = req.body;
     
     const { data, error } = await supabase
       .from('payment_transactions')
-      .insert([{
+      .insert({
         user_id: req.user.userId,
         investment_id: investmentId,
         amount: amount,
         payment_method: 'BTC',
         status: 'pending',
-        wallet_address: walletAddress
-      }])
+        wallet_address: walletAddress,
+        created_at: new Date().toISOString()
+      })
       .select();
     
     if (error) throw error;
@@ -57,15 +73,11 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
 });
 
 // Admin: Get pending payments
-router.get('/admin/pending', verifyToken, async (req, res) => {
+router.get('/admin/pending', verifyAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin only' });
-    }
-    
     const { data, error } = await supabase
       .from('payment_transactions')
-      .select('*, users(username, email)')
+      .select('*, users(id, username, email)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
     
@@ -77,23 +89,19 @@ router.get('/admin/pending', verifyToken, async (req, res) => {
 });
 
 // Admin: Approve payment
-router.post('/admin/approve/:id', verifyToken, async (req, res) => {
+router.post('/admin/approve/:id', verifyAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin only' });
-    }
-    
     const { id } = req.params;
     
     const { data, error } = await supabase
       .from('payment_transactions')
-      .update({ status: 'confirmed', confirmed_at: new Date() })
+      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
       .eq('id', id)
       .select();
     
     if (error) throw error;
     
-    // Also update investment paid_amount
+    // Update investment paid_amount
     if (data[0]) {
       await supabase.rpc('update_investment_paid_amount', { p_payment_id: id });
     }

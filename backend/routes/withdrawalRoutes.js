@@ -16,6 +16,21 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+const verifyAdmin = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, error: 'No token' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Admin required' });
+    }
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ success: false, error: 'Invalid token' });
+  }
+};
+
 // Get user's withdrawals
 router.get('/my-withdrawals', verifyToken, async (req, res) => {
   try {
@@ -43,12 +58,13 @@ router.post('/request', verifyToken, async (req, res) => {
     
     const { data, error } = await supabase
       .from('withdrawal_requests')
-      .insert([{
+      .insert({
         user_id: req.user.userId,
         amount: amount,
         btc_address: btcAddress,
-        status: 'pending'
-      }])
+        status: 'pending',
+        created_at: new Date().toISOString()
+      })
       .select();
     
     if (error) throw error;
@@ -59,15 +75,11 @@ router.post('/request', verifyToken, async (req, res) => {
 });
 
 // Admin: Get pending withdrawals
-router.get('/admin/pending', verifyToken, async (req, res) => {
+router.get('/admin/pending', verifyAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin only' });
-    }
-    
     const { data, error } = await supabase
       .from('withdrawal_requests')
-      .select('*, users(username, email)')
+      .select('*, users(id, username, email)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
     
@@ -79,17 +91,13 @@ router.get('/admin/pending', verifyToken, async (req, res) => {
 });
 
 // Admin: Approve withdrawal
-router.post('/admin/approve/:id', verifyToken, async (req, res) => {
+router.post('/admin/approve/:id', verifyAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin only' });
-    }
-    
     const { id } = req.params;
     
     const { data, error } = await supabase
       .from('withdrawal_requests')
-      .update({ status: 'approved', approved_at: new Date(), approved_by: req.user.userId })
+      .update({ status: 'approved', approved_at: new Date().toISOString(), approved_by: req.user.userId })
       .eq('id', id)
       .select();
     
@@ -101,12 +109,8 @@ router.post('/admin/approve/:id', verifyToken, async (req, res) => {
 });
 
 // Admin: Reject withdrawal
-router.post('/admin/reject/:id', verifyToken, async (req, res) => {
+router.post('/admin/reject/:id', verifyAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin only' });
-    }
-    
     const { id } = req.params;
     const { reason } = req.body;
     
