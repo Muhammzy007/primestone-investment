@@ -8,24 +8,39 @@ import { HiOutlineArrowLeft, HiOutlineCash, HiOutlineClock, HiOutlineCheckCircle
 const Withdrawals = () => {
   const { user } = useAuth();
   const [withdrawals, setWithdrawals] = useState([]);
+  const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [amount, setAmount] = useState('');
   const [btcAddress, setBtcAddress] = useState('');
+  const [selectedInvestment, setSelectedInvestment] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchWithdrawals();
+    fetchData();
   }, []);
 
-  const fetchWithdrawals = async () => {
+  const fetchData = async () => {
     try {
-      const response = await api.get('/withdrawals/my-withdrawals');
-      setWithdrawals(response.data.data || []);
+      const [withdrawalsRes, investmentsRes] = await Promise.all([
+        api.get('/withdrawals/my-withdrawals'),
+        api.get('/investments/my-investments')
+      ]);
+      setWithdrawals(withdrawalsRes.data.data || []);
+      setInvestments(investmentsRes.data.data || []);
     } catch (error) {
-      console.error('Error fetching withdrawals:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInvestmentSelect = (investmentId) => {
+    const inv = investments.find(i => i.id === parseInt(investmentId));
+    setSelectedInvestment(inv);
+    if (inv) {
+      // Set amount to expected_return (minimum withdrawal)
+      setAmount(inv.expected_return);
     }
   };
 
@@ -39,15 +54,24 @@ const Withdrawals = () => {
       toast.error('Please enter your BTC wallet address');
       return;
     }
+    if (!selectedInvestment) {
+      toast.error('Please select an investment to withdraw from');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      await api.post('/withdrawals/request', { amount: parseFloat(amount), btcAddress });
+      await api.post('/withdrawals/request', { 
+        amount: parseFloat(amount), 
+        btcAddress,
+        investmentId: selectedInvestment.id
+      });
       toast.success('Withdrawal request submitted! Admin will process shortly.');
       setShowForm(false);
       setAmount('');
       setBtcAddress('');
-      fetchWithdrawals();
+      setSelectedInvestment(null);
+      fetchData();
     } catch (error) {
       toast.error(error.response?.data?.error || 'Withdrawal request failed');
     } finally {
@@ -91,15 +115,50 @@ const Withdrawals = () => {
             <h2 className="text-xl font-semibold text-primestone-900 mb-4">Request Withdrawal</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Select Investment</label>
+                <select 
+                  className="w-full px-4 py-2 border rounded-lg"
+                  onChange={(e) => handleInvestmentSelect(e.target.value)}
+                  value={selectedInvestment?.id || ''}
+                  required
+                >
+                  <option value="">Select an investment...</option>
+                  {investments.filter(i => i.status === 'active' || i.status === 'completed').map(inv => (
+                    <option key={inv.id} value={inv.id}>
+                      {inv.investment_packages?.package_name} - Expected Return: ${inv.expected_return}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Amount (USD)</label>
                 <div className="relative">
                   <HiOutlineCash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                  <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Minimum $100" className="w-full pl-10 pr-4 py-2 border rounded-lg" min="100" step="0.01" required />
+                  <input 
+                    type="number" 
+                    value={amount} 
+                    onChange={(e) => setAmount(e.target.value)} 
+                    placeholder={`Minimum: $${selectedInvestment?.expected_return || 100}`}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg" 
+                    min={selectedInvestment?.expected_return || 100}
+                    step="0.01" 
+                    required 
+                  />
                 </div>
+                {selectedInvestment && (
+                  <p className="text-xs text-neutral-500 mt-1">Minimum withdrawal amount: ${selectedInvestment.expected_return} (Your expected return)</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">BTC Wallet Address</label>
-                <input type="text" value={btcAddress} onChange={(e) => setBtcAddress(e.target.value)} placeholder="Enter your BTC address" className="w-full px-4 py-2 border rounded-lg" required />
+                <input 
+                  type="text" 
+                  value={btcAddress} 
+                  onChange={(e) => setBtcAddress(e.target.value)} 
+                  placeholder="Enter your BTC address" 
+                  className="w-full px-4 py-2 border rounded-lg" 
+                  required 
+                />
               </div>
               <button type="submit" disabled={submitting} className="w-full bg-primestone-600 text-white py-2 rounded-lg hover:bg-primestone-700 disabled:opacity-50">
                 {submitting ? 'Submitting...' : 'Submit Request'}

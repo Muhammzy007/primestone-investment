@@ -50,10 +50,19 @@ router.get('/my-withdrawals', verifyToken, async (req, res) => {
 // Request withdrawal
 router.post('/request', verifyToken, async (req, res) => {
   try {
-    const { amount, btcAddress } = req.body;
+    const { amount, btcAddress, investmentId } = req.body;
     
-    if (amount < 100) {
-      return res.status(400).json({ success: false, error: 'Minimum withdrawal is $100' });
+    // Get investment to check expected return
+    const { data: investment } = await supabase
+      .from('user_investments')
+      .select('expected_return')
+      .eq('id', investmentId)
+      .single();
+    
+    const minAmount = investment?.expected_return || 100;
+    
+    if (amount < minAmount) {
+      return res.status(400).json({ success: false, error: `Minimum withdrawal is $${minAmount} (your expected return)` });
     }
     
     const { data, error } = await supabase
@@ -62,6 +71,7 @@ router.post('/request', verifyToken, async (req, res) => {
         user_id: req.user.userId,
         amount: amount,
         btc_address: btcAddress,
+        investment_id: investmentId,
         status: 'pending',
         created_at: new Date().toISOString()
       })
@@ -70,6 +80,7 @@ router.post('/request', verifyToken, async (req, res) => {
     if (error) throw error;
     res.json({ success: true, data: data[0] });
   } catch (error) {
+    console.error('Withdrawal request error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

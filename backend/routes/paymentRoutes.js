@@ -47,10 +47,17 @@ router.get('/my-payments', verifyToken, async (req, res) => {
   }
 });
 
-// Mark payment as sent
+// Mark payment as sent - FIXED
 router.post('/mark-sent', verifyToken, async (req, res) => {
+  console.log('Mark payment sent called with body:', req.body);
+  console.log('User:', req.user);
+  
   try {
     const { investmentId, amount, walletAddress } = req.body;
+    
+    if (!investmentId || !amount) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
     
     const { data, error } = await supabase
       .from('payment_transactions')
@@ -60,14 +67,20 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
         amount: amount,
         payment_method: 'BTC',
         status: 'pending',
-        wallet_address: walletAddress,
+        wallet_address: walletAddress || 'bc1qa54zw7f8c7ekp78fpvmqgq4uzexgzfwgfuvvle',
         created_at: new Date().toISOString()
       })
       .select();
     
-    if (error) throw error;
-    res.json({ success: true, data: data[0] });
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    
+    console.log('Payment recorded:', data);
+    res.json({ success: true, data: data[0], message: 'Payment notification sent to admin' });
   } catch (error) {
+    console.error('Mark payment error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -100,12 +113,6 @@ router.post('/admin/approve/:id', verifyAdmin, async (req, res) => {
       .select();
     
     if (error) throw error;
-    
-    // Update investment paid_amount
-    if (data[0]) {
-      await supabase.rpc('update_investment_paid_amount', { p_payment_id: id });
-    }
-    
     res.json({ success: true, message: 'Payment approved' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -9,10 +9,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024'
 
 // Generate JWT token
 const generateToken = (userId, role, username) => {
+  // Ensure role is properly set
+  console.log('Generating token for:', { userId, role, username });
   return jwt.sign({ userId, role, username }, JWT_SECRET, { expiresIn: '7d' });
 };
 
-// Register new user
+// Register
 router.post('/register', [
   body('username').isLength({ min: 3 }),
   body('email').isEmail(),
@@ -26,7 +28,6 @@ router.post('/register', [
   try {
     const { username, email, password } = req.body;
 
-    // Check if user exists
     const { data: existing } = await supabase
       .from('users')
       .select('id')
