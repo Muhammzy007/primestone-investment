@@ -5,7 +5,7 @@ const { supabase } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
-// Verify token and attach user
+// Verify token middleware
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -16,12 +16,12 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('Token error:', error);
     res.status(401).json({ success: false, error: 'Invalid token' });
   }
 };
 
-// Get all investment packages
+// GET /api/investments/packages - List all packages
 router.get('/packages', async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -38,7 +38,7 @@ router.get('/packages', async (req, res) => {
   }
 });
 
-// Get user's investments
+// GET /api/investments/my-investments - User's investments
 router.get('/my-investments', verifyToken, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -55,7 +55,7 @@ router.get('/my-investments', verifyToken, async (req, res) => {
   }
 });
 
-// Get investment stats
+// GET /api/investments/stats/summary - User stats
 router.get('/stats/summary', verifyToken, async (req, res) => {
   try {
     const { data: payments } = await supabase
@@ -64,7 +64,7 @@ router.get('/stats/summary', verifyToken, async (req, res) => {
       .eq('user_id', req.user.userId)
       .eq('status', 'confirmed');
     
-    const totalInvested = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const totalInvested = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     
     const { data: investments } = await supabase
       .from('user_investments')
@@ -91,20 +91,21 @@ router.get('/stats/summary', verifyToken, async (req, res) => {
   }
 });
 
-// Create new investment - FIXED
+// POST /api/investments/create - Create new investment
 router.post('/create', verifyToken, async (req, res) => {
+  console.log('Create investment called with body:', req.body);
+  console.log('User:', req.user);
+  
   try {
     const { package_id, investment_amount } = req.body;
     const user_id = req.user.userId;
 
-    console.log('Create investment request:', { user_id, package_id, investment_amount });
-
-    // Validate amount
+    // Validate
     if (!investment_amount || investment_amount < 500) {
       return res.status(400).json({ success: false, error: 'Minimum investment is $500' });
     }
 
-    // Get package details
+    // Get package
     const { data: pkg, error: pkgError } = await supabase
       .from('investment_packages')
       .select('*')
@@ -112,16 +113,14 @@ router.post('/create', verifyToken, async (req, res) => {
       .single();
 
     if (pkgError || !pkg) {
-      console.error('Package not found:', pkgError);
+      console.error('Package error:', pkgError);
       return res.status(404).json({ success: false, error: 'Package not found' });
     }
 
-    // Validate max investment
     if (investment_amount > pkg.max_investment) {
-      return res.status(400).json({ success: false, error: `Maximum investment is $${pkg.max_investment}` });
+      return res.status(400).json({ success: false, error: `Maximum is $${pkg.max_investment}` });
     }
 
-    // Calculate expected return
     const expected_return = investment_amount * pkg.return_multiplier;
 
     // Insert investment
@@ -145,15 +144,28 @@ router.post('/create', verifyToken, async (req, res) => {
     }
 
     console.log('Investment created:', newInvestment);
-
-    res.status(201).json({
-      success: true,
-      data: { id: newInvestment.id, message: 'Investment created successfully' }
-    });
+    res.status(201).json({ success: true, data: { id: newInvestment.id, message: 'Investment created successfully' } });
 
   } catch (error) {
-    console.error('Create investment error:', error);
+    console.error('Create error:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/investments/:id - Get single investment
+router.get('/:id', verifyToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_investments')
+      .select('*, investment_packages(*)')
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.userId)
+      .single();
+    
+    if (error) throw error;
+    res.json({ success: true, data: data || {} });
+  } catch (error) {
+    res.status(404).json({ success: false, error: 'Investment not found' });
   }
 });
 
