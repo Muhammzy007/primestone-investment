@@ -44,7 +44,7 @@ const AdminUsers = () => {
       });
       if (response.data.success) {
         toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-        fetchUsers(); // Refresh the list
+        fetchUsers();
       }
     } catch (error) {
       console.error('Error toggling user status:', error);
@@ -159,7 +159,7 @@ const AdminUsers = () => {
                           {user.is_active ? <HiOutlineCheckCircle className="w-4 h-4 mr-1" /> : <HiOutlineXCircle className="w-4 h-4 mr-1" />}
                           {user.is_active ? 'Active' : 'Inactive'}
                         </span>
-                      <tr>
+                      </td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex items-center">
                           <HiOutlineCalendar className="w-4 h-4 text-neutral-400 mr-2" />
@@ -181,7 +181,7 @@ const AdminUsers = () => {
                     </tr>
                   ))}
                 </tbody>
-              <td>
+              </table>
             </div>
           )}
         </div>
