@@ -1,11 +1,10 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { HiOutlineLogout, HiOutlineUser, HiOutlineChartBar, HiOutlineCreditCard, HiOutlineSettings } from 'react-icons/hi';
+import { HiOutlineLogout, HiOutlineUser, HiOutlineChartBar, HiOutlineCreditCard, HiOutlineCog } from 'react-icons/hi';
 
 const AdminNavbar = () => {
   const { admin, logout } = useAuth();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -32,8 +31,8 @@ const AdminNavbar = () => {
               <Link to="/admin/withdrawals" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
                 <HiOutlineCreditCard className="w-4 h-4 mr-1" /> Withdrawals
               </Link>
-              <Link to="/admin/settings" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                <HiOutlineSettings className="w-4 h-4 mr-1" /> Settings
+              <Link to="/admin/transactions" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                <HiOutlineCreditCard className="w-4 h-4 mr-1" /> Transactions
               </Link>
             </div>
           </div>

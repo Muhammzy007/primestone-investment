@@ -27,9 +27,11 @@ const Withdrawals = () => {
         api.get('/investments/my-investments')
       ]);
       setWithdrawals(withdrawalsRes.data.data || []);
-      setInvestments(investmentsRes.data.data || []);
+      const activeInvestments = (investmentsRes.data.data || []).filter(inv => inv.status === 'active' || inv.status === 'completed');
+      setInvestments(activeInvestments);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -38,24 +40,23 @@ const Withdrawals = () => {
   const handleInvestmentSelect = (investmentId) => {
     const inv = investments.find(i => i.id === parseInt(investmentId));
     setSelectedInvestment(inv);
-    if (inv) {
-      // Set amount to expected_return (minimum withdrawal)
-      setAmount(inv.expected_return);
+    if (inv && inv.expected_return) {
+      setAmount(inv.expected_return.toString());
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!amount || parseFloat(amount) < 100) {
-      toast.error('Minimum withdrawal amount is $100');
+    if (!selectedInvestment) {
+      toast.error('Please select an investment');
+      return;
+    }
+    if (!amount || parseFloat(amount) < (selectedInvestment.expected_return || 100)) {
+      toast.error(`Minimum withdrawal amount is $${selectedInvestment.expected_return || 100}`);
       return;
     }
     if (!btcAddress) {
       toast.error('Please enter your BTC wallet address');
-      return;
-    }
-    if (!selectedInvestment) {
-      toast.error('Please select an investment to withdraw from');
       return;
     }
 
@@ -104,7 +105,10 @@ const Withdrawals = () => {
         </Link>
         
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-display font-bold text-primestone-900">Withdrawals</h1>
+          <div>
+            <h1 className="text-3xl font-display font-bold text-primestone-900">Withdrawals</h1>
+            <p className="text-neutral-500 text-sm mt-1">Active investments: {investments.length}</p>
+          </div>
           <button onClick={() => setShowForm(!showForm)} className="btn-primary">
             {showForm ? 'Cancel' : 'Request Withdrawal'}
           </button>
@@ -123,9 +127,9 @@ const Withdrawals = () => {
                   required
                 >
                   <option value="">Select an investment...</option>
-                  {investments.filter(i => i.status === 'active' || i.status === 'completed').map(inv => (
+                  {investments.map(inv => (
                     <option key={inv.id} value={inv.id}>
-                      {inv.investment_packages?.package_name} - Expected Return: ${inv.expected_return}
+                      {inv.investment_packages?.package_name} - Invested: ${inv.investment_amount} | Expected Return: ${inv.expected_return}
                     </option>
                   ))}
                 </select>

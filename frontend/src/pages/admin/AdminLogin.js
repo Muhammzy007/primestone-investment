@@ -1,174 +1,101 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  HiOutlineMail, 
-  HiOutlineLockClosed, 
-  HiOutlineEye, 
-  HiOutlineEyeOff,
-  HiOutlineShieldCheck,
-  HiOutlineArrowRight
-} from 'react-icons/hi';
+import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
+import toast from 'react-hot-toast';
 
 const AdminLogin = () => {
-  const navigate = useNavigate();
   const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [errors, setErrors] = useState({});
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-    return newErrors;
-  };
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
     setLoading(true);
-    const result = await login(formData.email, formData.password, true);
-    setLoading(false);
-
+    setError('');
+    
+    const result = await login(email, password, true);
+    
     if (result.success) {
-      window.location.href = '/admin';
+      navigate('/admin');
+    } else {
+      setError(result.error || 'Login failed');
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primestone-900 to-primestone-700 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-primestone-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white rounded-2xl shadow-2xl p-8">
-        {/* Header with Admin Badge */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 bg-gradient-to-br from-primestone-600 to-primestone-800 rounded-full flex items-center justify-center shadow-lg border-4 border-primestone-400 relative overflow-hidden animate-float">
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-30 transform rotate-45 animate-shine"></div>
-              <HiOutlineShieldCheck className="w-12 h-12 text-white relative z-10" />
+            <div className="w-20 h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-primestone-800 font-bold text-3xl">P</span>
             </div>
           </div>
-          <h2 className="text-3xl font-display font-bold text-primestone-900">
-            Admin Portal
-          </h2>
-          <p className="mt-2 text-primestone-600 font-medium">
-            Secure Administrator Access
-          </p>
+          <h2 className="text-3xl font-display font-bold text-primestone-900">Admin Login</h2>
+          <p className="mt-2 text-primestone-400 font-medium">Secure admin access only</p>
         </div>
 
-        {/* Admin Notice */}
-        <div className="bg-primestone-50 border-l-4 border-primestone-600 p-4 rounded">
-          <p className="text-sm text-primestone-700">
-            This area is restricted to administrators only.
-          </p>
-        </div>
-
-        {/* Login Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
-                Admin Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <HiOutlineMail className="h-5 w-5 text-neutral-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter admin email"
-                  className={`block w-full pl-10 pr-3 py-3 border ${
-                    errors.email ? 'border-error' : 'border-neutral-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent`}
-                />
-              </div>
-              {errors.email && <p className="mt-1 text-sm text-error">{errors.email}</p>}
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              {error}
             </div>
+          )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-2">
-                Admin Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <HiOutlineLockClosed className="h-5 w-5 text-neutral-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter admin password"
-                  className={`block w-full pl-10 pr-10 py-3 border ${
-                    errors.password ? 'border-error' : 'border-neutral-300'
-                  } rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500 focus:border-transparent`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <HiOutlineEyeOff className="h-5 w-5 text-neutral-400 hover:text-primestone-600" />
-                  ) : (
-                    <HiOutlineEye className="h-5 w-5 text-neutral-400 hover:text-primestone-600" />
-                  )}
-                </button>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Email Address</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                <HiOutlineMail className="h-5 w-5 text-neutral-400" />
               </div>
-              {errors.password && <p className="mt-1 text-sm text-error">{errors.password}</p>}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="block w-full pl-10 pr-3 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500"
+                placeholder="admin@primestone.com"
+                required
+              />
             </div>
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-3 px-4 rounded-lg font-medium hover:from-primestone-700 hover:to-primestone-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primestone-500 disabled:opacity-50 flex items-center justify-center"
-            >
-              {loading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Authenticating...
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  Access Admin Panel <HiOutlineArrowRight className="ml-2 h-5 w-5" />
-                </span>
-              )}
-            </button>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Password</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                <HiOutlineLockClosed className="h-5 w-5 text-neutral-400" />
+              </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full pl-10 pr-10 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                {showPassword ? <HiOutlineEyeOff className="h-5 w-5 text-neutral-400" /> : <HiOutlineEye className="h-5 h-5 text-neutral-400" />}
+              </button>
+            </div>
           </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-primestone-600 to-primestone-700 text-white py-3 px-4 rounded-lg font-medium disabled:opacity-50"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
         </form>
       </div>
     </div>

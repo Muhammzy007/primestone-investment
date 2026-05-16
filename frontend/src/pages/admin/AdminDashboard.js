@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import { HiOutlineUsers, HiOutlineCash, HiOutlineCreditCard, HiOutlineClock, HiOutlineCheckCircle, HiOutlineXCircle, HiOutlineRefresh } from 'react-icons/hi';
+import { HiOutlineUsers, HiOutlineCash, HiOutlineCreditCard, HiOutlineClock, HiOutlineRefresh } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -29,14 +29,12 @@ const AdminDashboard = () => {
     setError(null);
     try {
       const response = await api.get('/admin/dashboard/stats');
-      console.log('Dashboard stats:', response.data);
-      if (response.data.success) {
+      if (response.data && response.data.success) {
         setStats(response.data.data.statistics || {});
       }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
       setError('Failed to load dashboard data');
-      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -45,7 +43,21 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center"><div className="spinner mb-4"></div><p>Loading dashboard...</p></div>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primestone-200 border-t-primestone-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button onClick={fetchStats} className="bg-primestone-600 text-white px-4 py-2 rounded-lg">Retry</button>
+        </div>
       </div>
     );
   }
@@ -58,20 +70,10 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-display font-bold text-primestone-900">Admin Dashboard</h1>
             <p className="text-neutral-600">Welcome back, {admin?.username || 'Administrator'}</p>
           </div>
-          <div className="flex space-x-3">
-            <button onClick={fetchStats} className="bg-primestone-100 text-primestone-700 px-4 py-2 rounded-lg hover:bg-primestone-200 flex items-center">
-              <HiOutlineRefresh className="w-4 h-4 mr-1" /> Refresh
-            </button>
-            <button onClick={logout} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Logout</button>
-          </div>
+          <button onClick={logout} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+            Logout
+          </button>
         </div>
-
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6 flex justify-between items-center">
-            <span>{error}</span>
-            <button onClick={fetchStats} className="bg-red-700 text-white px-3 py-1 rounded text-sm">Retry</button>
-          </div>
-        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

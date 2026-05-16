@@ -16,7 +16,6 @@ const AdminTransactions = () => {
     setError(null);
     try {
       const response = await api.get('/admin/transactions');
-      console.log('Transactions response:', response.data);
       setTransactions(response.data.data || []);
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -85,12 +84,12 @@ const AdminTransactions = () => {
                       <td className="px-6 py-4">
                         <div className="font-medium">{tx.users?.username}</div>
                         <div className="text-xs text-neutral-500">{tx.users?.email}</div>
-                      </td>
+                       </td>
                       <td className="px-6 py-4 font-semibold text-primestone-600">${tx.amount}</td>
                       <td className="px-6 py-4 text-sm">{tx.payment_method || 'BTC'}</td>
                       <td className="px-6 py-4 text-sm">{getStatusBadge(tx.status)}</td>
                       <td className="px-6 py-4 text-sm">{new Date(tx.created_at).toLocaleString()}</td>
-                    </tr>
+                    </table>
                   ))
                 )}
               </tbody>
