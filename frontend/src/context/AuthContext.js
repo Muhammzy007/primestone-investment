@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing sessions
     const adminToken = localStorage.getItem('admin_token');
     const userToken = localStorage.getItem('user_token');
     const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -26,17 +25,15 @@ export const AuthProvider = ({ children }) => {
         const payload = JSON.parse(atob(adminToken.split('.')[1]));
         if (payload.role === 'admin') {
           setAdmin({ id: payload.userId, username: payload.username, role: 'admin' });
+          console.log('Admin session loaded:', payload.username);
         }
-      } catch (e) {
-        localStorage.removeItem('admin_token');
-      }
+      } catch (e) { localStorage.removeItem('admin_token'); }
     } else if (userToken && !isAdminRoute) {
       try {
         const payload = JSON.parse(atob(userToken.split('.')[1]));
         setUser({ id: payload.userId, username: payload.username, role: 'user' });
-      } catch (e) {
-        localStorage.removeItem('user_token');
-      }
+        console.log('User session loaded:', payload.username);
+      } catch (e) { localStorage.removeItem('user_token'); }
     }
     setLoading(false);
   }, []);
@@ -44,20 +41,20 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, isAdminLogin = false) => {
     try {
       const response = await api.post('/auth/login', { email, password });
+      console.log('Login response:', response.data);
+      
       if (response.data?.success) {
         const { token, user: userData } = response.data.data;
         
         if (userData.role === 'admin') {
-          // Admin login - only set admin token
           localStorage.setItem('admin_token', token);
-          // DO NOT remove user_token - keep user session separate
+          localStorage.removeItem('user_token');
           setAdmin(userData);
-          toast.success('Admin login successful!');
+          toast.success(`Welcome Admin, ${userData.username}!`);
           window.location.href = '/admin';
         } else {
-          // User login - only set user token
           localStorage.setItem('user_token', token);
-          // DO NOT remove admin_token - keep admin session separate
+          localStorage.removeItem('admin_token');
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
           window.location.href = '/dashboard';
@@ -67,6 +64,7 @@ export const AuthProvider = ({ children }) => {
       toast.error(response.data?.error || 'Login failed');
       return { success: false };
     } catch (error) {
+      console.error('Login error:', error);
       toast.error(error.response?.data?.error || 'Login failed');
       return { success: false };
     }
@@ -75,17 +73,21 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
+      console.log('Register response:', response.data);
+      
       if (response.data?.success) {
-        const { token, user: userDataResponse } = response.data.data;
+        const { token, user: newUser } = response.data.data;
         localStorage.setItem('user_token', token);
-        setUser(userDataResponse);
-        toast.success('Registration successful!');
+        localStorage.removeItem('admin_token');
+        setUser(newUser);
+        toast.success(`Welcome ${newUser.username}! Registration successful.`);
         window.location.href = '/dashboard';
         return { success: true };
       }
       toast.error(response.data?.error || 'Registration failed');
       return { success: false };
     } catch (error) {
+      console.error('Registration error:', error);
       toast.error(error.response?.data?.error || 'Registration failed');
       return { success: false };
     }
@@ -95,16 +97,14 @@ export const AuthProvider = ({ children }) => {
     const isAdminRoute = window.location.pathname.startsWith('/admin');
     
     if (isAdminRoute) {
-      // Only clear admin session, keep user session intact
       localStorage.removeItem('admin_token');
       setAdmin(null);
-      toast.success('Admin logged out successfully');
+      toast.success('Admin logged out');
       window.location.href = '/admin/login';
     } else {
-      // Only clear user session, keep admin session intact
       localStorage.removeItem('user_token');
       setUser(null);
-      toast.success('Logged out successfully');
+      toast.success('Logged out');
       window.location.href = '/';
     }
   };

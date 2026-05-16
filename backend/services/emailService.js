@@ -1,71 +1,74 @@
-const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 class EmailService {
   constructor() {
-    console.log('Initializing Email Service...');
-    console.log('SMTP_HOST:', process.env.SMTP_HOST);
-    console.log('SMTP_PORT:', process.env.SMTP_PORT);
-    console.log('SMTP_USER:', process.env.SMTP_USER);
-    
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 30000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000
-    });
+    this.apiKey = process.env.BREVO_API_KEY;
+    this.senderEmail = process.env.SENDER_EMAIL || 'primestoneinvestmentplatform@gmail.com';
+    this.senderName = process.env.SENDER_NAME || 'PrimeStone Investment';
   }
 
-  async sendEmail(to, subject, html) {
+  async sendEmail(to, subject, htmlContent) {
+    if (!this.apiKey) {
+      console.error('❌ Missing Brevo API key');
+      return { success: false, error: 'Email not configured' };
+    }
+
     try {
-      const info = await this.transporter.sendMail({
-        from: `"PrimeStone Investment" <${process.env.SMTP_USER}>`,
-        to: to,
-        subject: subject,
-        html: html
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': this.apiKey
+        },
+        body: JSON.stringify({
+          sender: { name: this.senderName, email: this.senderEmail },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: htmlContent
+        })
       });
-      console.log(`✅ Email sent to ${to}:`, info.messageId);
-      return { success: true, messageId: info.messageId };
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Brevo error:', result);
+        return { success: false, error: result.message };
+      }
+      
+      console.log(`✅ Email sent to ${to}`);
+      return { success: true };
     } catch (error) {
-      console.error('❌ Email error:', error.message);
+      console.error('Email error:', error);
       return { success: false, error: error.message };
     }
   }
 
   async sendWelcomeEmail(email, username) {
-    const subject = '🎉 Welcome to PrimeStone Investment!';
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">Welcome ${username}!</h2>
         <p>Thank you for joining PrimeStone Investment Platform.</p>
         <p>You can start investing from as low as <strong>$500</strong>.</p>
         <a href="${process.env.FRONTEND_URL}/login" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a>
+        <p style="margin-top: 20px;">Start your investment journey today!</p>
       </div>
     `;
-    return this.sendEmail(email, subject, html);
+    return this.sendEmail(email, '🎉 Welcome to PrimeStone Investment!', html);
   }
 
   async sendPasswordResetEmail(email, username, resetLink) {
-    const subject = '🔐 Password Reset Request';
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">Password Reset Request</h2>
         <p>Hello ${username},</p>
-        <p>Click the button below to reset your password:</p>
+        <p>We received a request to reset your password. Click the button below:</p>
         <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
-        <p>This link expires in 1 hour.</p>
+        <p><strong>⚠️ This link expires in 1 hour</strong></p>
+        <p>If you didn't request this, please ignore this email.</p>
       </div>
     `;
-    return this.sendEmail(email, subject, html);
+    return this.sendEmail(email, '🔐 Password Reset Request', html);
   }
 }
 
