@@ -7,8 +7,10 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const isAdminRoute = location.pathname.startsWith('/admin');
+    const token = isAdminRoute ? localStorage.getItem('admin_token') : localStorage.getItem('user_token');
+
+    console.log('ProtectedRoute:', { isAdminRoute, hasToken: !!token });
 
     if (!token) {
       window.location.href = isAdminRoute ? '/admin/login' : '/login';
@@ -17,10 +19,10 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const userRole = payload.role;
+      console.log('Token payload:', payload);
 
       if (adminOnly || isAdminRoute) {
-        if (userRole === 'admin') {
+        if (payload.role === 'admin') {
           setAuthorized(true);
         } else {
           window.location.href = '/dashboard';
@@ -30,23 +32,17 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
         setAuthorized(true);
       }
     } catch (e) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      console.error('Token decode error:', e);
+      if (isAdminRoute) localStorage.removeItem('admin_token');
+      else localStorage.removeItem('user_token');
+      window.location.href = isAdminRoute ? '/admin/login' : '/login';
       return;
     }
-    
     setLoading(false);
   }, [location.pathname, adminOnly]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primestone-200 border-t-primestone-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center"><div className="spinner"></div><p className="ml-2">Loading...</p></div>;
   }
 
   return authorized ? children : null;

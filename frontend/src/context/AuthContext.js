@@ -16,21 +16,26 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
+    // Check for admin token first
+    const adminToken = localStorage.getItem('admin_token');
+    const userToken = localStorage.getItem('user_token');
+    const isAdminRoute = window.location.pathname.startsWith('/admin');
+
+    if (isAdminRoute && adminToken) {
       try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(atob(base64));
-        
+        const payload = JSON.parse(atob(adminToken.split('.')[1]));
         if (payload.role === 'admin') {
           setAdmin({ id: payload.userId, username: payload.username, role: 'admin' });
-        } else {
-          setUser({ id: payload.userId, username: payload.username, role: 'user' });
         }
       } catch (e) {
-        console.error('Token decode error:', e);
-        localStorage.removeItem('token');
+        localStorage.removeItem('admin_token');
+      }
+    } else if (userToken && !isAdminRoute) {
+      try {
+        const payload = JSON.parse(atob(userToken.split('.')[1]));
+        setUser({ id: payload.userId, username: payload.username, role: 'user' });
+      } catch (e) {
+        localStorage.removeItem('user_token');
       }
     }
     setLoading(false);
@@ -40,85 +45,68 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       
-      if (response.data && response.data.success === true) {
+      if (response.data?.success) {
         const { token, user: userData } = response.data.data;
         
-        localStorage.setItem('token', token);
-        
         if (userData.role === 'admin') {
+          localStorage.setItem('admin_token', token);
+          localStorage.removeItem('user_token');
           setAdmin(userData);
           toast.success('Admin login successful!');
           window.location.href = '/admin';
-          return { success: true };
         } else {
+          localStorage.setItem('user_token', token);
+          localStorage.removeItem('admin_token');
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
           window.location.href = '/dashboard';
-          return { success: true };
         }
-      } else {
-        toast.error(response.data?.error || 'Login failed');
-        return { success: false, error: response.data?.error };
+        return { success: true };
       }
+      toast.error(response.data?.error || 'Login failed');
+      return { success: false };
     } catch (error) {
-      console.error('Login error:', error);
-      const message = error.response?.data?.error || 'Login failed';
-      toast.error(message);
-      return { success: false, error: message };
+      toast.error(error.response?.data?.error || 'Login failed');
+      return { success: false };
     }
   };
 
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      
-      if (response.data && response.data.success === true) {
+      if (response.data?.success) {
         const { token, user: userDataResponse } = response.data.data;
-        
-        localStorage.setItem('token', token);
+        localStorage.setItem('user_token', token);
+        localStorage.removeItem('admin_token');
         setUser(userDataResponse);
         toast.success('Registration successful!');
         window.location.href = '/dashboard';
         return { success: true };
-      } else {
-        toast.error(response.data?.error || 'Registration failed');
-        return { success: false };
       }
+      toast.error(response.data?.error || 'Registration failed');
+      return { success: false };
     } catch (error) {
-      console.error('Registration error:', error);
-      const message = error.response?.data?.error || 'Registration failed';
-      toast.error(message);
-      return { success: false, error: message };
+      toast.error(error.response?.data?.error || 'Registration failed');
+      return { success: false };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setAdmin(null);
-    toast.success('Logged out successfully');
-    // Check if current path is admin to redirect to admin login
-    if (window.location.pathname.startsWith('/admin')) {
+    const isAdminRoute = window.location.pathname.startsWith('/admin');
+    if (isAdminRoute) {
+      localStorage.removeItem('admin_token');
+      setAdmin(null);
       window.location.href = '/admin/login';
     } else {
+      localStorage.removeItem('user_token');
+      setUser(null);
       window.location.href = '/';
     }
-  };
-
-  const value = {
-    user,
-    admin,
-    loading,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!(user || admin),
-    isAdmin: !!admin,
-    isUser: !!user
+    toast.success('Logged out successfully');
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, admin, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
