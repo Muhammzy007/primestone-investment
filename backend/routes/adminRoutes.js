@@ -5,15 +5,31 @@ const { supabase } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
+// Admin verification middleware
 const verifyAdmin = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ success: false, error: 'No token' });
+  
+  console.log('=== ADMIN VERIFICATION ===');
+  console.log('Token present:', !!token);
+  
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'No token provided' });
+  }
+  
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.role !== 'admin') return res.status(403).json({ success: false, error: 'Admin required' });
+    console.log('Decoded token:', { userId: decoded.userId, role: decoded.role });
+    
+    if (decoded.role !== 'admin') {
+      console.log(`Access denied: User ${decoded.userId} has role ${decoded.role}, not admin`);
+      return res.status(403).json({ success: false, error: 'Admin access required' });
+    }
+    
     req.user = decoded;
+    console.log(`✅ Admin verified: ${decoded.userId}`);
     next();
   } catch (error) {
+    console.error('Token verification error:', error);
     res.status(401).json({ success: false, error: 'Invalid token' });
   }
 };
@@ -21,13 +37,16 @@ const verifyAdmin = (req, res, next) => {
 // GET /api/admin/users - Get all users
 router.get('/users', verifyAdmin, async (req, res) => {
   try {
+    console.log('Fetching all users...');
+    
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    console.log(`✅ Admin fetched ${data?.length || 0} users`);
+    
+    console.log(`✅ Found ${data?.length || 0} users`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -35,38 +54,32 @@ router.get('/users', verifyAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/dashboard/stats - Get dashboard statistics
+// GET /api/admin/dashboard/stats - Get statistics
 router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
   try {
+    console.log('Fetching admin dashboard stats...');
+    
     // Get total users
-    const { count: totalUsers, error: usersError } = await supabase
+    const { count: totalUsers } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true });
     
-    if (usersError) console.error('Users count error:', usersError);
-    
     // Get total investments
-    const { count: totalInvestments, error: invError } = await supabase
+    const { count: totalInvestments } = await supabase
       .from('user_investments')
       .select('*', { count: 'exact', head: true });
     
-    if (invError) console.error('Investments count error:', invError);
-    
     // Get pending withdrawals
-    const { count: pendingWithdrawals, error: wdError } = await supabase
+    const { count: pendingWithdrawals } = await supabase
       .from('withdrawal_requests')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
     
-    if (wdError) console.error('Withdrawals count error:', wdError);
-    
-    // Get total received from confirmed payments
-    const { data: payments, error: payError } = await supabase
+    // Get total received
+    const { data: payments } = await supabase
       .from('payment_transactions')
       .select('amount')
       .eq('status', 'confirmed');
-    
-    if (payError) console.error('Payments error:', payError);
     
     const totalReceived = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     
@@ -78,22 +91,20 @@ router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
     };
     
     console.log('📊 Admin stats:', stats);
-    
-    res.json({
-      success: true,
-      data: { statistics: stats }
-    });
+    res.json({ success: true, data: { statistics: stats } });
   } catch (error) {
     console.error('Stats error:', error);
     res.json({ success: true, data: { statistics: { total_users: 0, total_investments: 0, pending_withdrawals: 0, total_received: 0 } } });
   }
 });
 
-// POST /api/admin/users/:userId/toggle-status - Activate/Deactivate user
+// POST /api/admin/users/:userId/toggle-status
 router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
     const { isActive } = req.body;
+    
+    console.log(`Toggling user ${userId} status to: ${isActive ? 'active' : 'inactive'}`);
     
     const { error } = await supabase
       .from('users')
@@ -102,10 +113,9 @@ router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
     
     if (error) throw error;
     
-    console.log(`✅ User ${userId} ${isActive ? 'activated' : 'deactivated'}`);
     res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}` });
   } catch (error) {
-    console.error('Error toggling user status:', error);
+    console.error('Error toggling user:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

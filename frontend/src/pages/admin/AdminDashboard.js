@@ -18,7 +18,10 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (admin) {
+      console.log('Admin user loaded:', admin);
       fetchStats();
+    } else {
+      console.log('No admin user found');
     }
   }, [admin]);
 
@@ -26,17 +29,18 @@ const AdminDashboard = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log('Fetching admin stats...');
       const response = await api.get('/admin/dashboard/stats');
       console.log('Stats response:', response.data);
       
       if (response.data.success) {
         setStats(response.data.data.statistics || {});
       } else {
-        setError('Failed to load statistics');
+        setError(response.data.error || 'Failed to load statistics');
       }
     } catch (err) {
       console.error('Error fetching stats:', err);
-      setError('Failed to load dashboard data');
+      setError(err.response?.data?.error || 'Failed to load dashboard data');
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -60,7 +64,8 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-primestone-900">Admin Dashboard</h1>
-            <p className="text-neutral-600">Welcome back, {admin?.username || 'Administrator'}</p>
+            <p className="text-neutral-600">Welcome back, {admin?.username || 'Administrator'}!</p>
+            <p className="text-xs text-neutral-400">Admin ID: {admin?.id} | Role: {admin?.role}</p>
           </div>
           <div className="flex gap-3">
             <button 

@@ -21,17 +21,30 @@ export const AuthProvider = ({ children }) => {
       const userToken = localStorage.getItem('user_token');
       const isAdminRoute = window.location.pathname.startsWith('/admin');
 
+      console.log('Loading user - Admin route:', isAdminRoute);
+      console.log('Admin token exists:', !!adminToken);
+      console.log('User token exists:', !!userToken);
+
       if (isAdminRoute && adminToken) {
         try {
           const response = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${adminToken}` }
           });
           if (response.data.success) {
-            setAdmin(response.data.data);
-            console.log('Admin loaded:', response.data.data);
+            const userData = response.data.data;
+            if (userData.role === 'admin') {
+              setAdmin(userData);
+              console.log('✅ Admin loaded:', userData.username);
+            } else {
+              console.log('Token exists but user is not admin, clearing...');
+              localStorage.removeItem('admin_token');
+              window.location.href = '/admin/login';
+            }
           }
         } catch (e) {
+          console.error('Failed to load admin:', e);
           localStorage.removeItem('admin_token');
+          if (isAdminRoute) window.location.href = '/admin/login';
         }
       } else if (userToken && !isAdminRoute) {
         try {
@@ -40,9 +53,10 @@ export const AuthProvider = ({ children }) => {
           });
           if (response.data.success) {
             setUser(response.data.data);
-            console.log('User loaded:', response.data.data);
+            console.log('✅ User loaded:', response.data.data.username);
           }
         } catch (e) {
+          console.error('Failed to load user:', e);
           localStorage.removeItem('user_token');
         }
       }
@@ -87,12 +101,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      console.log('Register response:', response.data);
-      
       if (response.data?.success) {
         const { token, user: newUser } = response.data.data;
         localStorage.setItem('user_token', token);
-        localStorage.removeItem('admin_token');
         setUser(newUser);
         toast.success(`Welcome ${newUser.username}! Registration successful.`);
         window.location.href = '/dashboard';
