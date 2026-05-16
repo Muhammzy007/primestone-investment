@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for existing sessions
     const adminToken = localStorage.getItem('admin_token');
     const userToken = localStorage.getItem('user_token');
     const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -26,12 +27,16 @@ export const AuthProvider = ({ children }) => {
         if (payload.role === 'admin') {
           setAdmin({ id: payload.userId, username: payload.username, role: 'admin' });
         }
-      } catch (e) { localStorage.removeItem('admin_token'); }
+      } catch (e) {
+        localStorage.removeItem('admin_token');
+      }
     } else if (userToken && !isAdminRoute) {
       try {
         const payload = JSON.parse(atob(userToken.split('.')[1]));
         setUser({ id: payload.userId, username: payload.username, role: 'user' });
-      } catch (e) { localStorage.removeItem('user_token'); }
+      } catch (e) {
+        localStorage.removeItem('user_token');
+      }
     }
     setLoading(false);
   }, []);
@@ -43,14 +48,16 @@ export const AuthProvider = ({ children }) => {
         const { token, user: userData } = response.data.data;
         
         if (userData.role === 'admin') {
+          // Admin login - only set admin token
           localStorage.setItem('admin_token', token);
-          localStorage.removeItem('user_token');
+          // DO NOT remove user_token - keep user session separate
           setAdmin(userData);
           toast.success('Admin login successful!');
           window.location.href = '/admin';
         } else {
+          // User login - only set user token
           localStorage.setItem('user_token', token);
-          localStorage.removeItem('admin_token');
+          // DO NOT remove admin_token - keep admin session separate
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
           window.location.href = '/dashboard';
@@ -71,7 +78,6 @@ export const AuthProvider = ({ children }) => {
       if (response.data?.success) {
         const { token, user: userDataResponse } = response.data.data;
         localStorage.setItem('user_token', token);
-        localStorage.removeItem('admin_token');
         setUser(userDataResponse);
         toast.success('Registration successful!');
         window.location.href = '/dashboard';
@@ -87,16 +93,20 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     const isAdminRoute = window.location.pathname.startsWith('/admin');
+    
     if (isAdminRoute) {
+      // Only clear admin session, keep user session intact
       localStorage.removeItem('admin_token');
       setAdmin(null);
+      toast.success('Admin logged out successfully');
       window.location.href = '/admin/login';
     } else {
+      // Only clear user session, keep admin session intact
       localStorage.removeItem('user_token');
       setUser(null);
+      toast.success('Logged out successfully');
       window.location.href = '/';
     }
-    toast.success('Logged out successfully');
   };
 
   return (

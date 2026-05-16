@@ -7,7 +7,7 @@ const AdminNavbar = () => {
   const { admin, logout } = useAuth();
 
   const handleLogout = () => {
-    logout();
+    logout(); // This now only clears admin session
   };
 
   return (
@@ -22,26 +22,15 @@ const AdminNavbar = () => {
               <span className="text-white font-bold text-xl">PrimeStone Admin</span>
             </Link>
             <div className="hidden md:flex ml-10 space-x-4">
-              <Link to="/admin" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                <HiOutlineChartBar className="w-4 h-4 mr-1" /> Dashboard
-              </Link>
-              <Link to="/admin/users" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                <HiOutlineUser className="w-4 h-4 mr-1" /> Users
-              </Link>
-              <Link to="/admin/withdrawals" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                <HiOutlineCreditCard className="w-4 h-4 mr-1" /> Withdrawals
-              </Link>
-              <Link to="/admin/transactions" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                <HiOutlineCreditCard className="w-4 h-4 mr-1" /> Transactions
-              </Link>
+              <Link to="/admin" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</Link>
+              <Link to="/admin/users" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Users</Link>
+              <Link to="/admin/withdrawals" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Withdrawals</Link>
+              <Link to="/admin/transactions" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Transactions</Link>
             </div>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-primestone-300 text-sm">Welcome, {admin?.username || 'Admin'}</span>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors"
-            >
+            <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
               <HiOutlineLogout className="w-4 h-4 mr-1" /> Logout
             </button>
           </div>

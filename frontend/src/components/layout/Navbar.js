@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { HiOutlineMenu, HiOutlineX, HiOutlineUser, HiOutlineChartBar, HiOutlineCash, HiOutlineRefresh, HiOutlineLogout } from 'react-icons/hi';
+import { HiOutlineMenu, HiOutlineX, HiOutlineLogout } from 'react-icons/hi';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    logout(); // This now only clears user session
   };
 
   return (
@@ -26,7 +24,6 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
@@ -47,30 +44,28 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-white focus:outline-none">
+            <button onClick={() => setIsOpen(!isOpen)} className="text-white">
               {isOpen ? <HiOutlineX className="w-6 h-6" /> : <HiOutlineMenu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden pb-4">
             {user ? (
               <div className="flex flex-col space-y-2">
-                <Link to="/dashboard" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" onClick={() => setIsOpen(false)}>Dashboard</Link>
-                <Link to="/investments" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" onClick={() => setIsOpen(false)}>Investments</Link>
-                <Link to="/payments" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" onClick={() => setIsOpen(false)}>Payments</Link>
-                <Link to="/withdrawals" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" onClick={() => setIsOpen(false)}>Withdrawals</Link>
-                <Link to="/profile" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" onClick={() => setIsOpen(false)}>Profile</Link>
-                <button onClick={handleLogout} className="bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium text-left">Logout</button>
+                <Link to="/dashboard" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm" onClick={() => setIsOpen(false)}>Dashboard</Link>
+                <Link to="/investments" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm" onClick={() => setIsOpen(false)}>Investments</Link>
+                <Link to="/payments" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm" onClick={() => setIsOpen(false)}>Payments</Link>
+                <Link to="/withdrawals" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm" onClick={() => setIsOpen(false)}>Withdrawals</Link>
+                <Link to="/profile" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm" onClick={() => setIsOpen(false)}>Profile</Link>
+                <button onClick={handleLogout} className="bg-red-600 text-white px-3 py-2 rounded-md text-sm text-left">Logout</button>
               </div>
             ) : (
               <div className="flex flex-col space-y-2">
-                <Link to="/login" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" onClick={() => setIsOpen(false)}>Login</Link>
-                <Link to="/register" className="bg-[#FFD700] text-primestone-900 px-3 py-2 rounded-md text-sm font-medium text-center" onClick={() => setIsOpen(false)}>Sign Up</Link>
+                <Link to="/login" className="text-primestone-200 hover:text-white px-3 py-2 rounded-md text-sm" onClick={() => setIsOpen(false)}>Login</Link>
+                <Link to="/register" className="bg-[#FFD700] text-primestone-900 px-3 py-2 rounded-md text-sm text-center" onClick={() => setIsOpen(false)}>Sign Up</Link>
               </div>
             )}
           </div>
