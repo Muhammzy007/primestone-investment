@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for admin token first
     const adminToken = localStorage.getItem('admin_token');
     const userToken = localStorage.getItem('user_token');
     const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -27,16 +26,12 @@ export const AuthProvider = ({ children }) => {
         if (payload.role === 'admin') {
           setAdmin({ id: payload.userId, username: payload.username, role: 'admin' });
         }
-      } catch (e) {
-        localStorage.removeItem('admin_token');
-      }
+      } catch (e) { localStorage.removeItem('admin_token'); }
     } else if (userToken && !isAdminRoute) {
       try {
         const payload = JSON.parse(atob(userToken.split('.')[1]));
         setUser({ id: payload.userId, username: payload.username, role: 'user' });
-      } catch (e) {
-        localStorage.removeItem('user_token');
-      }
+      } catch (e) { localStorage.removeItem('user_token'); }
     }
     setLoading(false);
   }, []);
@@ -44,7 +39,6 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, isAdminLogin = false) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      
       if (response.data?.success) {
         const { token, user: userData } = response.data.data;
         
