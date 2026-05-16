@@ -27,17 +27,24 @@ const AdminTransactions = () => {
 
   const getStatusBadge = (status) => {
     switch(status) {
-      case 'confirmed': return <span className="flex items-center text-green-600"><HiOutlineCheckCircle className="w-4 h-4 mr-1" /> Confirmed</span>;
-      case 'pending': return <span className="flex items-center text-yellow-600"><HiOutlineClock className="w-4 h-4 mr-1" /> Pending</span>;
-      case 'failed': return <span className="flex items-center text-red-600"><HiOutlineXCircle className="w-4 h-4 mr-1" /> Failed</span>;
-      default: return status;
+      case 'confirmed':
+        return <span className="flex items-center text-green-600"><HiOutlineCheckCircle className="w-4 h-4 mr-1" /> Confirmed</span>;
+      case 'pending':
+        return <span className="flex items-center text-yellow-600"><HiOutlineClock className="w-4 h-4 mr-1" /> Pending</span>;
+      case 'failed':
+        return <span className="flex items-center text-red-600"><HiOutlineXCircle className="w-4 h-4 mr-1" /> Failed</span>;
+      default:
+        return status;
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center"><div className="spinner mb-4"></div><p>Loading transactions...</p></div>
+        <div className="text-center">
+          <div className="spinner mb-4"></div>
+          <p>Loading transactions...</p>
+        </div>
       </div>
     );
   }
@@ -84,12 +91,12 @@ const AdminTransactions = () => {
                       <td className="px-6 py-4">
                         <div className="font-medium">{tx.users?.username}</div>
                         <div className="text-xs text-neutral-500">{tx.users?.email}</div>
-                       </td>
+                      </td>
                       <td className="px-6 py-4 font-semibold text-primestone-600">${tx.amount}</td>
                       <td className="px-6 py-4 text-sm">{tx.payment_method || 'BTC'}</td>
                       <td className="px-6 py-4 text-sm">{getStatusBadge(tx.status)}</td>
                       <td className="px-6 py-4 text-sm">{new Date(tx.created_at).toLocaleString()}</td>
-                    </table>
+                    </tr>
                   ))
                 )}
               </tbody>
