@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 const AdminLogin = () => {
-  const { login } = useAuth();
+  const { login, admin } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // If already logged in as admin, redirect to admin dashboard
+  useEffect(() => {
+    if (admin) {
+      navigate('/admin');
+    }
+  }, [admin, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,9 +27,7 @@ const AdminLogin = () => {
     
     const result = await login(email, password, true);
     
-    if (result.success) {
-      navigate('/admin');
-    } else {
+    if (!result.success) {
       setError(result.error || 'Login failed');
       setLoading(false);
     }

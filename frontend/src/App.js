@@ -37,101 +37,160 @@ import AdminTransactions from './pages/admin/AdminTransactions';
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
 
+// Admin Layout
+import AdminNavbar from './components/layout/AdminNavbar';
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Toaster position="top-right" />
-        <div className="min-h-screen bg-gradient-to-b from-primestone-50 to-white flex flex-col">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/about" element={<About />} />
-            
-            {/* Admin Login - No Layout */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            
-            {/* Admin Routes - No Navbar/Footer */}
-            <Route path="/admin" element={
-              <ProtectedRoute adminOnly={true}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/users" element={
-              <ProtectedRoute adminOnly={true}>
-                <AdminUsers />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/withdrawals" element={
-              <ProtectedRoute adminOnly={true}>
-                <AdminWithdrawals />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/transactions" element={
-              <ProtectedRoute adminOnly={true}>
-                <AdminTransactions />
-              </ProtectedRoute>
-            } />
-            
-            {/* User Routes with Layout */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><Dashboard /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-            <Route path="/investments" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><Investments /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-            <Route path="/investments/new" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><CreateInvestment /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-            <Route path="/investments/:id" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><InvestmentDetail /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-            <Route path="/payments" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><Payments /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-            <Route path="/withdrawals" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><Withdrawals /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Navbar />
-                <main className="flex-grow"><Profile /></main>
-                <Footer />
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </div>
+        <Routes>
+          {/* Public Routes with Navbar and Footer */}
+          <Route path="/" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><Home /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/login" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><Login /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/register" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><Register /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/forgot-password" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><ForgotPassword /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/reset-password" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><ResetPassword /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/faq" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><FAQ /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/terms" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><Terms /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/privacy" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><Privacy /></main>
+              <Footer />
+            </>
+          } />
+          <Route path="/about" element={
+            <>
+              <Navbar />
+              <main className="flex-grow"><About /></main>
+              <Footer />
+            </>
+          } />
+          
+          {/* Admin Login - No Navbar/Footer */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* Admin Routes with AdminNavbar */}
+          <Route path="/admin" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminNavbar />
+              <main className="flex-grow"><AdminDashboard /></main>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminNavbar />
+              <main className="flex-grow"><AdminUsers /></main>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/withdrawals" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminNavbar />
+              <main className="flex-grow"><AdminWithdrawals /></main>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/transactions" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminNavbar />
+              <main className="flex-grow"><AdminTransactions /></main>
+            </ProtectedRoute>
+          } />
+          
+          {/* User Routes with Navbar and Footer */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><Dashboard /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/investments" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><Investments /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/investments/new" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><CreateInvestment /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/investments/:id" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><InvestmentDetail /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/payments" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><Payments /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/withdrawals" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><Withdrawals /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Navbar />
+              <main className="flex-grow"><Profile /></main>
+              <Footer />
+            </ProtectedRoute>
+          } />
+        </Routes>
       </AuthProvider>
     </BrowserRouter>
   );

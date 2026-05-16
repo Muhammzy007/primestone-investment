@@ -18,13 +18,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (user) {
-      console.log('=== DASHBOARD DEBUG ===');
-      console.log('Logged in user:', user);
-      console.log('User ID:', user?.id);
-      console.log('User token exists:', !!localStorage.getItem('user_token'));
       fetchDashboardData();
-    } else {
-      console.log('No user found, waiting for auth...');
     }
   }, [user]);
 
@@ -32,15 +26,8 @@ const Dashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching dashboard data for user ID:', user?.id);
-      
-      // Fetch stats
       const statsResponse = await api.get('/investments/stats/summary');
-      console.log('Stats response:', statsResponse.data);
-      
-      // Fetch investments
       const investmentsResponse = await api.get('/investments/my-investments');
-      console.log('Investments response:', investmentsResponse.data);
       
       if (statsResponse.data?.success) {
         setStats(statsResponse.data.data.summary || {});
@@ -51,7 +38,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Dashboard error:', error);
-      setError('Failed to load dashboard data. Please refresh the page.');
+      setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -87,8 +74,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-primestone-900">Welcome back, {user?.username}!</h1>
-          <p className="text-neutral-600">User ID: {user?.id} | Role: {user?.role}</p>
-          <p className="text-xs text-neutral-400 mt-1">Your personal investment dashboard</p>
+          <p className="text-neutral-600 mt-1">Track your investments and watch your wealth grow</p>
         </div>
 
         {/* Stats Cards */}
@@ -97,40 +83,40 @@ const Dashboard = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-neutral-500">Total Invested</p>
+                <p className="text-2xl font-bold mt-1">${stats.totalInvested?.toLocaleString() || 0}</p>
               </div>
               <HiOutlineCash className="w-8 h-8 text-primestone-600" />
             </div>
-            <p className="text-2xl font-bold mt-2">${stats.totalInvested?.toLocaleString() || 0}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-neutral-500">Current Value</p>
+                <p className="text-2xl font-bold mt-1 text-green-600">${stats.currentValue?.toLocaleString() || 0}</p>
               </div>
               <HiOutlineTrendingUp className="w-8 h-8 text-green-600" />
             </div>
-            <p className="text-2xl font-bold mt-2 text-green-600">${stats.currentValue?.toLocaleString() || 0}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-neutral-500">Expected Returns</p>
+                <p className="text-2xl font-bold mt-1 text-yellow-600">${stats.totalReturns?.toLocaleString() || 0}</p>
               </div>
               <HiOutlineRefresh className="w-8 h-8 text-yellow-600" />
             </div>
-            <p className="text-2xl font-bold mt-2 text-yellow-600">${stats.totalReturns?.toLocaleString() || 0}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-neutral-500">Active Investments</p>
+                <p className="text-2xl font-bold mt-1 text-purple-600">{stats.activeInvestments || 0}</p>
               </div>
               <HiOutlineChartBar className="w-8 h-8 text-purple-600" />
             </div>
-            <p className="text-2xl font-bold mt-2 text-purple-600">{stats.activeInvestments || 0}</p>
           </div>
         </div>
 
@@ -179,8 +165,8 @@ const Dashboard = () => {
                   {recentInvestments.map((inv) => (
                     <tr key={inv.id} className="hover:bg-neutral-50">
                       <td className="px-4 py-3">{inv.investment_packages?.package_name}</td>
-                      <td className="px-4 py-3">${inv.investment_amount}</td>
-                      <td className="px-4 py-3 text-green-600">${inv.paid_amount || 0}</td>
+                      <td className="px-4 py-3">${inv.investment_amount?.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-green-600">${inv.paid_amount?.toLocaleString() || 0}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           inv.status === 'active' ? 'bg-green-100 text-green-800' :
