@@ -41,10 +41,13 @@ router.get('/users', verifyAdmin, async (req, res) => {
     
     const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, username, email, role, is_active, created_at, last_login')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
     
     console.log(`✅ Found ${data?.length || 0} users`);
     res.json({ success: true, data: data || [] });
@@ -60,26 +63,34 @@ router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
     console.log('Fetching admin dashboard stats...');
     
     // Get total users
-    const { count: totalUsers } = await supabase
+    const { count: totalUsers, error: usersError } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true });
     
+    if (usersError) console.error('Users count error:', usersError);
+    
     // Get total investments
-    const { count: totalInvestments } = await supabase
+    const { count: totalInvestments, error: invError } = await supabase
       .from('user_investments')
       .select('*', { count: 'exact', head: true });
     
+    if (invError) console.error('Investments count error:', invError);
+    
     // Get pending withdrawals
-    const { count: pendingWithdrawals } = await supabase
+    const { count: pendingWithdrawals, error: wdError } = await supabase
       .from('withdrawal_requests')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
     
-    // Get total received
-    const { data: payments } = await supabase
+    if (wdError) console.error('Withdrawals count error:', wdError);
+    
+    // Get total received from confirmed payments
+    const { data: payments, error: payError } = await supabase
       .from('payment_transactions')
       .select('amount')
       .eq('status', 'confirmed');
+    
+    if (payError) console.error('Payments error:', payError);
     
     const totalReceived = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     
@@ -98,7 +109,7 @@ router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/users/:userId/toggle-status
+// POST /api/admin/users/:userId/toggle-status - Activate/Deactivate user
 router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -106,68 +117,104 @@ router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
     
     console.log(`Toggling user ${userId} status to: ${isActive ? 'active' : 'inactive'}`);
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('users')
       .update({ is_active: isActive })
-      .eq('id', parseInt(userId));
+      .eq('id', parseInt(userId))
+      .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Update error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
     
-    res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}` });
+    console.log(`✅ User ${userId} ${isActive ? 'activated' : 'deactivated'}`);
+    res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}`, data });
   } catch (error) {
     console.error('Error toggling user:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET /api/admin/withdrawals/pending
+// GET /api/admin/withdrawals/pending - Get pending withdrawals
 router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
   try {
+    console.log('Fetching pending withdrawals...');
+    
     const { data, error } = await supabase
       .from('withdrawal_requests')
       .select('*, users(id, username, email)')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching withdrawals:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    
+    console.log(`✅ Found ${data?.length || 0} pending withdrawals`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
-    res.json({ success: true, data: [] });
-  }
-});
-
-// POST /api/admin/withdrawals/:id/approve
-router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    await supabase
-      .from('withdrawal_requests')
-      .update({ status: 'approved', approved_at: new Date().toISOString() })
-      .eq('id', parseInt(id));
-    res.json({ success: true, message: 'Withdrawal approved' });
-  } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// POST /api/admin/withdrawals/:id/reject
+// POST /api/admin/withdrawals/:id/approve - Approve withdrawal
+router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`Approving withdrawal ${id}`);
+    
+    const { error } = await supabase
+      .from('withdrawal_requests')
+      .update({ 
+        status: 'approved', 
+        approved_at: new Date().toISOString(),
+        approved_by: req.user.userId
+      })
+      .eq('id', parseInt(id));
+    
+    if (error) throw error;
+    
+    console.log(`✅ Withdrawal ${id} approved`);
+    res.json({ success: true, message: 'Withdrawal approved' });
+  } catch (error) {
+    console.error('Error approving withdrawal:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/withdrawals/:id/reject - Reject withdrawal
 router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    await supabase
+    console.log(`Rejecting withdrawal ${id}, reason: ${reason}`);
+    
+    const { error } = await supabase
       .from('withdrawal_requests')
-      .update({ status: 'rejected', rejection_reason: reason })
+      .update({ 
+        status: 'rejected', 
+        rejection_reason: reason 
+      })
       .eq('id', parseInt(id));
+    
+    if (error) throw error;
+    
+    console.log(`✅ Withdrawal ${id} rejected`);
     res.json({ success: true, message: 'Withdrawal rejected' });
   } catch (error) {
+    console.error('Error rejecting withdrawal:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET /api/admin/transactions
+// GET /api/admin/transactions - Get all transactions
 router.get('/transactions', verifyAdmin, async (req, res) => {
   try {
+    console.log('Fetching transactions...');
+    
     const { data, error } = await supabase
       .from('payment_transactions')
       .select('*, users(id, username, email)')
@@ -175,9 +222,12 @@ router.get('/transactions', verifyAdmin, async (req, res) => {
       .limit(100);
     
     if (error) throw error;
+    
+    console.log(`✅ Found ${data?.length || 0} transactions`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
-    res.json({ success: true, data: [] });
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
