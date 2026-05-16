@@ -16,44 +16,43 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUser = async () => {
+    const checkAuth = async () => {
       const adminToken = localStorage.getItem('admin_token');
       const userToken = localStorage.getItem('user_token');
       const isAdminRoute = window.location.pathname.startsWith('/admin');
 
-      console.log('Loading user - Admin route:', isAdminRoute);
+      console.log('🔐 Auth Check - Admin route:', isAdminRoute);
       console.log('Admin token exists:', !!adminToken);
       console.log('User token exists:', !!userToken);
 
+      // Only load admin if on admin route and admin token exists
       if (isAdminRoute && adminToken) {
         try {
           const response = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${adminToken}` }
           });
-          if (response.data.success) {
-            const userData = response.data.data;
-            if (userData.role === 'admin') {
-              setAdmin(userData);
-              console.log('✅ Admin loaded:', userData.username);
-            } else {
-              console.log('Token exists but user is not admin, clearing...');
-              localStorage.removeItem('admin_token');
-              window.location.href = '/admin/login';
-            }
+          if (response.data.success && response.data.data.role === 'admin') {
+            setAdmin(response.data.data);
+            console.log('✅ Admin loaded:', response.data.data.username);
+          } else {
+            localStorage.removeItem('admin_token');
           }
         } catch (e) {
           console.error('Failed to load admin:', e);
           localStorage.removeItem('admin_token');
-          if (isAdminRoute) window.location.href = '/admin/login';
         }
-      } else if (userToken && !isAdminRoute) {
+      } 
+      // Only load user if on user route and user token exists
+      else if (!isAdminRoute && userToken) {
         try {
           const response = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${userToken}` }
           });
-          if (response.data.success) {
+          if (response.data.success && response.data.data.role === 'user') {
             setUser(response.data.data);
             console.log('✅ User loaded:', response.data.data.username);
+          } else {
+            localStorage.removeItem('user_token');
           }
         } catch (e) {
           console.error('Failed to load user:', e);
@@ -63,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
 
-    loadUser();
+    checkAuth();
   }, []);
 
   const login = async (email, password, isAdminLogin = false) => {
@@ -75,14 +74,16 @@ export const AuthProvider = ({ children }) => {
         const { token, user: userData } = response.data.data;
         
         if (userData.role === 'admin') {
+          // Admin login - ONLY set admin token, NEVER touch user token
           localStorage.setItem('admin_token', token);
-          localStorage.removeItem('user_token');
+          // DO NOT remove user_token - keep user session separate
           setAdmin(userData);
           toast.success(`Welcome Admin, ${userData.username}!`);
           window.location.href = '/admin';
         } else {
+          // User login - ONLY set user token, NEVER touch admin token
           localStorage.setItem('user_token', token);
-          localStorage.removeItem('admin_token');
+          // DO NOT remove admin_token - keep admin session separate
           setUser(userData);
           toast.success(`Welcome back, ${userData.username}!`);
           window.location.href = '/dashboard';
@@ -122,11 +123,13 @@ export const AuthProvider = ({ children }) => {
     const isAdminRoute = window.location.pathname.startsWith('/admin');
     
     if (isAdminRoute) {
+      // Only clear admin token, leave user token untouched
       localStorage.removeItem('admin_token');
       setAdmin(null);
       toast.success('Admin logged out');
       window.location.href = '/admin/login';
     } else {
+      // Only clear user token, leave admin token untouched
       localStorage.removeItem('user_token');
       setUser(null);
       toast.success('Logged out');
