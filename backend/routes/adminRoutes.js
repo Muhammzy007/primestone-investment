@@ -18,7 +18,7 @@ const verifyAdmin = (req, res, next) => {
   }
 };
 
-// GET /api/admin/users - Get all users
+// GET ALL USERS
 router.get('/users', verifyAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -26,43 +26,22 @@ router.get('/users', verifyAdmin, async (req, res) => {
       .select('id, username, email, role, is_active, created_at, last_login')
       .order('created_at', { ascending: false });
     
-    if (error) {
-      console.error('Users fetch error:', error);
-      return res.status(500).json({ success: false, error: error.message });
-    }
-    
-    console.log(`✅ Admin fetched ${data?.length || 0} users`);
+    if (error) throw error;
+    console.log(`Admin fetched ${data?.length || 0} users`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error fetching users:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET /api/admin/dashboard/stats - Get dashboard statistics
+// GET DASHBOARD STATS
 router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
   try {
-    // Get total users
     const { count: totalUsers } = await supabase.from('users').select('*', { count: 'exact', head: true });
-    
-    // Get users from last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const { count: newUsers7d } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', sevenDaysAgo.toISOString());
-    
-    // Get total investments
     const { count: totalInvestments } = await supabase.from('user_investments').select('*', { count: 'exact', head: true });
-    
-    // Get active investments
-    const { count: activeInvestments } = await supabase.from('user_investments').select('*', { count: 'exact', head: true }).eq('status', 'active');
-    
-    // Get pending withdrawals
     const { count: pendingWithdrawals } = await supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
     
-    // Get total received
     const { data: payments } = await supabase.from('payment_transactions').select('amount').eq('status', 'confirmed');
     const totalReceived = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     
@@ -71,9 +50,7 @@ router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
       data: {
         statistics: {
           total_users: totalUsers || 0,
-          new_users_7d: newUsers7d || 0,
           total_investments: totalInvestments || 0,
-          active_investments: activeInvestments || 0,
           pending_withdrawals: pendingWithdrawals || 0,
           total_received: totalReceived
         }
@@ -85,25 +62,20 @@ router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/users/:userId/toggle-status - Activate/Deactivate user
+// TOGGLE USER STATUS
 router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
     const { isActive } = req.body;
     
-    const { error } = await supabase
-      .from('users')
-      .update({ is_active: isActive })
-      .eq('id', parseInt(userId));
-    
-    if (error) throw error;
+    await supabase.from('users').update({ is_active: isActive }).eq('id', parseInt(userId));
     res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET /api/admin/withdrawals/pending
+// PENDING WITHDRAWALS
 router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -119,7 +91,7 @@ router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/withdrawals/:id/approve
+// APPROVE WITHDRAWAL
 router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -133,7 +105,7 @@ router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
   }
 });
 
-// POST /api/admin/withdrawals/:id/reject
+// REJECT WITHDRAWAL
 router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,7 +120,7 @@ router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/transactions
+// TRANSACTIONS
 router.get('/transactions', verifyAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase

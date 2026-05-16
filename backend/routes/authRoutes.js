@@ -9,13 +9,14 @@ const EmailService = require('../services/emailService');
 const emailService = new EmailService();
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
 
-// Generate token with correct user ID
-const generateToken = (userId, role, username) => {
-  console.log('Generating token for:', { userId, role, username });
-  return jwt.sign({ userId, role, username }, JWT_SECRET, { expiresIn: '7d' });
+// Generate token with user data
+const generateToken = (userId, role, username, email) => {
+  const token = jwt.sign({ userId, role, username, email }, JWT_SECRET, { expiresIn: '7d' });
+  console.log(`Generated token for user: ${username} (ID: ${userId}, Role: ${role})`);
+  return token;
 };
 
-// REGISTER - Create new user and return correct user data
+// REGISTER - Create new user and return correct data
 router.post('/register', [
   body('username').isLength({ min: 3 }),
   body('email').isEmail(),
@@ -28,11 +29,12 @@ router.post('/register', [
 
   try {
     const { username, email, password } = req.body;
+    console.log(`Registration attempt for: ${email}`);
 
     // Check if user exists
     const { data: existing } = await supabase
       .from('users')
-      .select('id')
+      .select('id, email')
       .eq('email', email)
       .maybeSingle();
 
@@ -40,10 +42,8 @@ router.post('/register', [
       return res.status(400).json({ success: false, error: 'User already exists' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert([{ 
@@ -62,15 +62,13 @@ router.post('/register', [
       return res.status(500).json({ success: false, error: insertError.message });
     }
 
-    console.log('New user created:', { id: newUser.id, username: newUser.username, email: newUser.email });
+    console.log(`✅ New user created: ID=${newUser.id}, Username=${newUser.username}, Email=${newUser.email}`);
 
-    // Generate token for the NEW user
-    const token = generateToken(newUser.id, 'user', newUser.username);
+    const token = generateToken(newUser.id, 'user', newUser.username, newUser.email);
 
-    // Send welcome email (don't block registration)
+    // Send email in background
     emailService.sendWelcomeEmail(email, username).catch(err => console.error('Email error:', err.message));
 
-    // Return the NEW user's data
     res.json({
       success: true,
       data: {
@@ -89,7 +87,7 @@ router.post('/register', [
   }
 });
 
-// LOGIN - Return correct user data for the logged-in user
+// LOGIN - Return correct user data
 router.post('/login', [
   body('email').isEmail(),
   body('password').notEmpty()
@@ -101,8 +99,8 @@ router.post('/login', [
 
   try {
     const { email, password } = req.body;
+    console.log(`Login attempt for: ${email}`);
 
-    // Find user by email
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -110,32 +108,29 @@ router.post('/login', [
       .maybeSingle();
 
     if (error || !user) {
+      console.log(`User not found: ${email}`);
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    // Verify password
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      console.log(`Invalid password for: ${email}`);
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    // Check if user is active
     if (!user.is_active) {
       return res.status(403).json({ success: false, error: 'Account deactivated. Contact admin.' });
     }
 
-    console.log('User logged in:', { id: user.id, username: user.username, role: user.role });
+    console.log(`✅ User logged in: ID=${user.id}, Username=${user.username}, Role=${user.role}`);
 
-    // Generate token for THIS user
-    const token = generateToken(user.id, user.role, user.username);
+    const token = generateToken(user.id, user.role, user.username, user.email);
 
-    // Update last login
     await supabase
       .from('users')
       .update({ last_login: new Date().toISOString() })
       .eq('id', user.id);
 
-    // Return THIS user's data
     res.json({
       success: true,
       data: {
@@ -154,7 +149,7 @@ router.post('/login', [
   }
 });
 
-// GET CURRENT USER - Verify token and return correct user
+// GET CURRENT USER - Verify token and return user
 router.get('/me', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
@@ -163,11 +158,11 @@ router.get('/me', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Decoded token:', decoded);
+    console.log(`Token verified for user ID: ${decoded.userId}`);
     
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, username, email, role, created_at')
+      .select('id, username, email, role, created_at, is_active')
       .eq('id', decoded.userId)
       .single();
 
@@ -175,7 +170,7 @@ router.get('/me', async (req, res) => {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    console.log('Returning user data for:', user.username);
+    console.log(`✅ Returning user data for: ${user.username}`);
     res.json({ success: true, data: user });
   } catch (error) {
     console.error('Token verification error:', error);

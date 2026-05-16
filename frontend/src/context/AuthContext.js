@@ -16,26 +16,40 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const adminToken = localStorage.getItem('admin_token');
-    const userToken = localStorage.getItem('user_token');
-    const isAdminRoute = window.location.pathname.startsWith('/admin');
+    const loadUser = async () => {
+      const adminToken = localStorage.getItem('admin_token');
+      const userToken = localStorage.getItem('user_token');
+      const isAdminRoute = window.location.pathname.startsWith('/admin');
 
-    if (isAdminRoute && adminToken) {
-      try {
-        const payload = JSON.parse(atob(adminToken.split('.')[1]));
-        if (payload.role === 'admin') {
-          setAdmin({ id: payload.userId, username: payload.username, role: 'admin' });
-          console.log('Admin session loaded:', payload.username);
+      if (isAdminRoute && adminToken) {
+        try {
+          const response = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          });
+          if (response.data.success) {
+            setAdmin(response.data.data);
+            console.log('Admin loaded:', response.data.data);
+          }
+        } catch (e) {
+          localStorage.removeItem('admin_token');
         }
-      } catch (e) { localStorage.removeItem('admin_token'); }
-    } else if (userToken && !isAdminRoute) {
-      try {
-        const payload = JSON.parse(atob(userToken.split('.')[1]));
-        setUser({ id: payload.userId, username: payload.username, role: 'user' });
-        console.log('User session loaded:', payload.username);
-      } catch (e) { localStorage.removeItem('user_token'); }
-    }
-    setLoading(false);
+      } else if (userToken && !isAdminRoute) {
+        try {
+          const response = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${userToken}` }
+          });
+          if (response.data.success) {
+            setUser(response.data.data);
+            console.log('User loaded:', response.data.data);
+          }
+        } catch (e) {
+          localStorage.removeItem('user_token');
+        }
+      }
+      setLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   const login = async (email, password, isAdminLogin = false) => {
