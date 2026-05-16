@@ -5,6 +5,10 @@ class EmailService {
     this.apiKey = process.env.BREVO_API_KEY;
     this.senderEmail = process.env.SENDER_EMAIL || 'primestoneinvestmentplatform@gmail.com';
     this.senderName = process.env.SENDER_NAME || 'PrimeStone Investment';
+    
+    console.log('📧 Email Service Initialized');
+    console.log('Sender:', this.senderEmail);
+    console.log('API Key exists:', !!this.apiKey);
   }
 
   async sendEmail(to, subject, htmlContent) {
@@ -14,6 +18,8 @@ class EmailService {
     }
 
     try {
+      console.log(`📧 Sending email to ${to}...`);
+      
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -32,14 +38,14 @@ class EmailService {
       const result = await response.json();
       
       if (!response.ok) {
-        console.error('Brevo error:', result);
-        return { success: false, error: result.message };
+        console.error('❌ Brevo API Error:', result);
+        return { success: false, error: result.message || 'API error' };
       }
       
-      console.log(`✅ Email sent to ${to}`);
-      return { success: true };
+      console.log(`✅ Email sent to ${to}. Message ID: ${result.messageId}`);
+      return { success: true, messageId: result.messageId };
     } catch (error) {
-      console.error('Email error:', error);
+      console.error('❌ Network error:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -51,7 +57,6 @@ class EmailService {
         <p>Thank you for joining PrimeStone Investment Platform.</p>
         <p>You can start investing from as low as <strong>$500</strong>.</p>
         <a href="${process.env.FRONTEND_URL}/login" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a>
-        <p style="margin-top: 20px;">Start your investment journey today!</p>
       </div>
     `;
     return this.sendEmail(email, '🎉 Welcome to PrimeStone Investment!', html);
@@ -63,9 +68,13 @@ class EmailService {
         <h2 style="color: #2563eb;">Password Reset Request</h2>
         <p>Hello ${username},</p>
         <p>We received a request to reset your password. Click the button below:</p>
-        <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        </div>
         <p><strong>⚠️ This link expires in 1 hour</strong></p>
         <p>If you didn't request this, please ignore this email.</p>
+        <hr>
+        <p style="font-size: 12px; color: #666;">PrimeStone Investment Platform</p>
       </div>
     `;
     return this.sendEmail(email, '🔐 Password Reset Request', html);

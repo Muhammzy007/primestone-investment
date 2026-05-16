@@ -18,16 +18,16 @@ const verifyAdmin = (req, res, next) => {
   }
 };
 
-// GET ALL USERS
+// GET /api/admin/users - Get all users
 router.get('/users', verifyAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, username, email, role, is_active, created_at, last_login')
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    console.log(`Admin fetched ${data?.length || 0} users`);
+    console.log(`✅ Admin fetched ${data?.length || 0} users`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -35,47 +35,82 @@ router.get('/users', verifyAdmin, async (req, res) => {
   }
 });
 
-// GET DASHBOARD STATS
+// GET /api/admin/dashboard/stats - Get dashboard statistics
 router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
   try {
-    const { count: totalUsers } = await supabase.from('users').select('*', { count: 'exact', head: true });
-    const { count: totalInvestments } = await supabase.from('user_investments').select('*', { count: 'exact', head: true });
-    const { count: pendingWithdrawals } = await supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    // Get total users
+    const { count: totalUsers, error: usersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
     
-    const { data: payments } = await supabase.from('payment_transactions').select('amount').eq('status', 'confirmed');
+    if (usersError) console.error('Users count error:', usersError);
+    
+    // Get total investments
+    const { count: totalInvestments, error: invError } = await supabase
+      .from('user_investments')
+      .select('*', { count: 'exact', head: true });
+    
+    if (invError) console.error('Investments count error:', invError);
+    
+    // Get pending withdrawals
+    const { count: pendingWithdrawals, error: wdError } = await supabase
+      .from('withdrawal_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    
+    if (wdError) console.error('Withdrawals count error:', wdError);
+    
+    // Get total received from confirmed payments
+    const { data: payments, error: payError } = await supabase
+      .from('payment_transactions')
+      .select('amount')
+      .eq('status', 'confirmed');
+    
+    if (payError) console.error('Payments error:', payError);
+    
     const totalReceived = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    
+    const stats = {
+      total_users: totalUsers || 0,
+      total_investments: totalInvestments || 0,
+      pending_withdrawals: pendingWithdrawals || 0,
+      total_received: totalReceived
+    };
+    
+    console.log('📊 Admin stats:', stats);
     
     res.json({
       success: true,
-      data: {
-        statistics: {
-          total_users: totalUsers || 0,
-          total_investments: totalInvestments || 0,
-          pending_withdrawals: pendingWithdrawals || 0,
-          total_received: totalReceived
-        }
-      }
+      data: { statistics: stats }
     });
   } catch (error) {
     console.error('Stats error:', error);
-    res.json({ success: true, data: { statistics: {} } });
+    res.json({ success: true, data: { statistics: { total_users: 0, total_investments: 0, pending_withdrawals: 0, total_received: 0 } } });
   }
 });
 
-// TOGGLE USER STATUS
+// POST /api/admin/users/:userId/toggle-status - Activate/Deactivate user
 router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
     const { isActive } = req.body;
     
-    await supabase.from('users').update({ is_active: isActive }).eq('id', parseInt(userId));
+    const { error } = await supabase
+      .from('users')
+      .update({ is_active: isActive })
+      .eq('id', parseInt(userId));
+    
+    if (error) throw error;
+    
+    console.log(`✅ User ${userId} ${isActive ? 'activated' : 'deactivated'}`);
     res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}` });
   } catch (error) {
+    console.error('Error toggling user status:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// PENDING WITHDRAWALS
+// GET /api/admin/withdrawals/pending
 router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -91,7 +126,7 @@ router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
   }
 });
 
-// APPROVE WITHDRAWAL
+// POST /api/admin/withdrawals/:id/approve
 router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -105,7 +140,7 @@ router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
   }
 });
 
-// REJECT WITHDRAWAL
+// POST /api/admin/withdrawals/:id/reject
 router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -120,7 +155,7 @@ router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
   }
 });
 
-// TRANSACTIONS
+// GET /api/admin/transactions
 router.get('/transactions', verifyAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
