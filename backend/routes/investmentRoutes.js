@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const { supabase } = require('../config/database');
 const { getPackages, getUserInvestments, getInvestmentStats, createInvestment } = require('../controllers/investmentController');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'primestone-secure-jwt-secret-2024';
@@ -31,7 +32,7 @@ router.get('/my-investments', verifyToken, getUserInvestments);
 // GET /api/investments/stats/summary - Get user stats
 router.get('/stats/summary', verifyToken, getInvestmentStats);
 
-// GET /api/investments/:id - Get single investment by ID
+// GET /api/investments/:id - Get single investment by ID (FIXED)
 router.get('/:id', verifyToken, async (req, res) => {
   try {
     const investmentId = parseInt(req.params.id);
@@ -46,21 +47,31 @@ router.get('/:id', verifyToken, async (req, res) => {
       .eq('user_id', userId)
       .single();
     
-    if (error || !data) {
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(404).json({ success: false, error: 'Investment not found' });
+    }
+    
+    if (!data) {
       return res.status(404).json({ success: false, error: 'Investment not found' });
     }
     
     // Get paid amount from confirmed payments
-    const { data: payments } = await supabase
+    const { data: payments, error: payError } = await supabase
       .from('payment_transactions')
       .select('amount')
       .eq('investment_id', investmentId)
       .eq('status', 'confirmed');
     
+    if (payError) {
+      console.error('Payment fetch error:', payError);
+    }
+    
     const paidAmount = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     data.paid_amount = paidAmount;
     data.remaining_amount = data.investment_amount - paidAmount;
     
+    console.log(`Investment found: ${data.id}, Package: ${data.investment_packages?.package_name}`);
     res.json({ success: true, data: data });
   } catch (error) {
     console.error('Error fetching investment:', error);
