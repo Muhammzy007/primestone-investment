@@ -37,11 +37,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error('Unauthorized request - Clearing tokens');
-      // Clear both tokens on 401
-      localStorage.removeItem('user_token');
-      localStorage.removeItem('admin_token');
-      window.location.href = '/login';
+      console.error('Unauthorized request - Status 401');
+      const isAdminRequest = error.config?.url?.startsWith('/admin');
+      
+      if (isAdminRequest) {
+        localStorage.removeItem('admin_token');
+        window.location.href = '/admin/login';
+      } else {
+        localStorage.removeItem('user_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -14,18 +14,19 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
       ? localStorage.getItem('admin_token') 
       : localStorage.getItem('user_token');
 
-    console.log('🔒 ProtectedRoute - Admin route:', isAdminRoute);
+    console.log('🔒 ProtectedRoute - Path:', location.pathname);
+    console.log('Is admin route:', isAdminRoute);
     console.log('Token exists:', !!token);
 
     if (!token) {
-      console.log('No token, redirecting to login');
+      console.log('No token, redirecting to', isAdminRoute ? '/admin/login' : '/login');
       window.location.href = isAdminRoute ? '/admin/login' : '/login';
       return;
     }
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('Token payload:', payload);
+      console.log('Token payload - userId:', payload.userId, 'role:', payload.role);
 
       if (isAdminRoute || adminOnly) {
         if (payload.role === 'admin') {
@@ -37,7 +38,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
           return;
         }
       } else {
-        // User routes - allow both user and admin (but admin will be redirected to admin panel)
+        // User routes
         if (payload.role === 'admin') {
           console.log('Admin accessing user route, redirecting to admin');
           window.location.href = '/admin';

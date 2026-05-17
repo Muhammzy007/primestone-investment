@@ -66,6 +66,8 @@ const createInvestment = async (req, res) => {
     const { package_id, investment_amount } = req.body;
     const userId = req.user.userId;
     
+    console.log(`Creating investment: package=${package_id}, amount=${investment_amount}, user=${userId}`);
+    
     const { data: pkg, error: pkgError } = await supabase
       .from('investment_packages')
       .select('*')
@@ -73,15 +75,19 @@ const createInvestment = async (req, res) => {
       .single();
     
     if (pkgError || !pkg) {
+      console.error('Package not found:', pkgError);
       return res.status(404).json({ success: false, error: 'Package not found' });
     }
     
+    // FIXED: Changed from 500 to 100
     if (investment_amount < 100) {
+      console.log(`Investment amount ${investment_amount} is less than minimum 100`);
       return res.status(400).json({ success: false, error: 'Minimum investment is $100' });
     }
     
     if (investment_amount > pkg.max_investment) {
-      return res.status(400).json({ success: false, error: `Maximum is $${pkg.max_investment}` });
+      console.log(`Investment amount ${investment_amount} exceeds max ${pkg.max_investment}`);
+      return res.status(400).json({ success: false, error: `Maximum investment is $${pkg.max_investment}` });
     }
     
     const expected_return = investment_amount * pkg.return_multiplier;
@@ -100,9 +106,13 @@ const createInvestment = async (req, res) => {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Insert error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
     
-    res.status(201).json({ success: true, data: { id: newInvestment.id } });
+    console.log(`Investment created successfully: ID=${newInvestment.id}`);
+    res.status(201).json({ success: true, data: { id: newInvestment.id, message: 'Investment created successfully' } });
   } catch (error) {
     console.error('Create error:', error);
     res.status(500).json({ success: false, error: error.message });

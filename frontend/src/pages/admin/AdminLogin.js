@@ -13,9 +13,10 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // If already logged in as admin, redirect to admin dashboard
   useEffect(() => {
+    // If already logged in as admin, redirect to admin dashboard
     if (admin) {
+      console.log('Admin already logged in, redirecting to /admin');
       navigate('/admin');
     }
   }, [admin, navigate]);
@@ -25,9 +26,16 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
     
+    console.log('Admin login attempt:', email);
     const result = await login(email, password, true);
     
-    if (!result.success) {
+    if (result.success) {
+      console.log('Admin login successful, redirecting...');
+      // The login function already redirects, but just in case
+      setTimeout(() => {
+        navigate('/admin');
+      }, 500);
+    } else {
       setError(result.error || 'Login failed');
       setLoading(false);
     }
