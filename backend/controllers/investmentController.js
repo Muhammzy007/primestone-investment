@@ -1,10 +1,9 @@
 const { supabase } = require('../config/database');
 
-// Get user's investments - ONLY for the logged-in user
+// Get user's investments
 const getUserInvestments = async (req, res) => {
   try {
     const userId = req.user.userId;
-    console.log(`📊 Fetching investments for user: ${userId}`);
     
     const { data, error } = await supabase
       .from('user_investments')
@@ -13,8 +12,6 @@ const getUserInvestments = async (req, res) => {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    
-    console.log(`✅ Found ${data?.length || 0} investments for user ${userId}`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
     console.error('Error:', error);
@@ -22,13 +19,12 @@ const getUserInvestments = async (req, res) => {
   }
 };
 
-// Get investment stats - ONLY for the logged-in user
+// Get investment stats
 const getInvestmentStats = async (req, res) => {
   try {
     const userId = req.user.userId;
-    console.log(`📊 Fetching stats for user: ${userId}`);
     
-    // Get total paid from confirmed payments
+    // Get total invested from confirmed payments
     const { data: payments } = await supabase
       .from('payment_transactions')
       .select('amount')
@@ -47,8 +43,6 @@ const getInvestmentStats = async (req, res) => {
     const totalReturns = investments?.reduce((sum, i) => sum + (i.expected_return || 0), 0) || 0;
     const currentValue = investments?.reduce((sum, i) => sum + (i.current_value || 0), 0) || 0;
     
-    console.log(`✅ Stats for user ${userId}: Invested=$${totalInvested}, Active=${activeInvestments}`);
-    
     res.json({ 
       success: true, 
       data: { 
@@ -66,22 +60,28 @@ const getInvestmentStats = async (req, res) => {
   }
 };
 
-// Create investment - For the logged-in user
+// Create investment
 const createInvestment = async (req, res) => {
   try {
     const { package_id, investment_amount } = req.body;
     const userId = req.user.userId;
     
-    console.log(`💰 Creating investment for user ${userId}: amount=$${investment_amount}`);
-    
-    const { data: pkg } = await supabase
+    const { data: pkg, error: pkgError } = await supabase
       .from('investment_packages')
       .select('*')
       .eq('id', package_id)
       .single();
     
-    if (!pkg) {
+    if (pkgError || !pkg) {
       return res.status(404).json({ success: false, error: 'Package not found' });
+    }
+    
+    if (investment_amount < 100) {
+      return res.status(400).json({ success: false, error: 'Minimum investment is $100' });
+    }
+    
+    if (investment_amount > pkg.max_investment) {
+      return res.status(400).json({ success: false, error: `Maximum is $${pkg.max_investment}` });
     }
     
     const expected_return = investment_amount * pkg.return_multiplier;
@@ -102,7 +102,6 @@ const createInvestment = async (req, res) => {
     
     if (error) throw error;
     
-    console.log(`✅ Investment created: ID=${newInvestment.id} for user ${userId}`);
     res.status(201).json({ success: true, data: { id: newInvestment.id } });
   } catch (error) {
     console.error('Create error:', error);
@@ -110,7 +109,7 @@ const createInvestment = async (req, res) => {
   }
 };
 
-// Get all packages (public)
+// Get all packages
 const getPackages = async (req, res) => {
   try {
     const { data, error } = await supabase

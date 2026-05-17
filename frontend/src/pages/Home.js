@@ -16,7 +16,7 @@ const Home = () => {
               </span>
             </h1>
             <p className="mt-6 text-xl text-neutral-600 max-w-2xl mx-auto">
-              Secure investment platform offering high returns on USDT investments. Start with as low as $500 and watch your money grow.
+              Secure investment platform offering high returns on USDT investments. Start with as low as $100 and watch your money grow.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register" className="btn-primary text-lg px-8 py-3">
@@ -35,7 +35,7 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-display font-bold text-primestone-900">Why Choose PrimeStone</h2>
-          <p className="mt-4 text-xl text-neutral-600 max-w-2xl mx-auto">Start your investment journey with as low as $500 and earn daily yields</p>
+          <p className="mt-4 text-xl text-neutral-600 max-w-2xl mx-auto">Start your investment journey with as low as $100 and earn daily yields</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
@@ -57,7 +57,7 @@ const Home = () => {
               <HiOutlineCash className="w-8 h-8 text-primestone-600" />
             </div>
             <h3 className="text-xl font-semibold text-primestone-800 mb-2">Low Entry</h3>
-            <p className="text-neutral-600">Start investing from just $500 with flexible payment options</p>
+            <p className="text-neutral-600">Start investing from just $100 with flexible payment options</p>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
             <div className="w-16 h-16 bg-primestone-100 rounded-full flex items-center justify-center mx-auto mb-4">

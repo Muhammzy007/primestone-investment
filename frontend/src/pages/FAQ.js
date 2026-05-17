@@ -12,7 +12,7 @@ const FAQ = () => {
   const faqs = [
     {
       question: "How do I start investing?",
-      answer: "Create an account, complete verification, choose an investment package, and make your first payment. You can start with as low as $500 in installments until you reach the minimum investment for your chosen package."
+      answer: "Create an account, complete verification, choose an investment package, and make your first payment. You can start with as low as $100 in installments until you reach the minimum investment for your chosen package."
     },
     {
       question: "What are the returns on investment?",

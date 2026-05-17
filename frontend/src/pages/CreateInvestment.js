@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ const BTC_ADDRESS = 'bc1qa54zw7f8c7ekp78fpvmqgq4uzexgzfwgfuvvle';
 
 const CreateInvestment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [packages, setPackages] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -21,28 +22,39 @@ const CreateInvestment = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, []);
+    
+    const params = new URLSearchParams(location.search);
+    const packageId = params.get('package');
+    if (packageId) {
+      const timer = setTimeout(() => {
+        const pkg = packages.find(p => p.id === parseInt(packageId));
+        if (pkg) {
+          setSelectedPackage(pkg);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.search, packages]);
 
   const fetchPackages = async () => {
     try {
       const response = await api.get('/investments/packages');
-      console.log('Packages response:', response.data);
-      const packagesData = response.data.data || [];
-      setPackages(packagesData);
-      if (packagesData.length > 0) {
-        setSelectedPackage(packagesData[0]);
-      }
+      setPackages(response.data.data || []);
     } catch (error) {
       console.error('Error fetching packages:', error);
       toast.error('Failed to load investment packages');
     }
   };
 
+  const handlePackageSelect = (pkg) => {
+    setSelectedPackage(pkg);
+  };
+
   const handleAmountSubmit = async () => {
     setError(null);
 
-    if (!amount || parseFloat(amount) < 500) {
-      toast.error('Minimum payment is $500');
+    if (!amount || parseFloat(amount) < 100) {
+      toast.error('Minimum investment is $100');
       return;
     }
     
@@ -58,21 +70,17 @@ const CreateInvestment = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      console.log('Creating investment with token:', token ? 'Present' : 'Missing');
-      
       const createResponse = await api.post('/investments/create', {
         package_id: selectedPackage.id,
         investment_amount: parseFloat(amount)
       });
 
-      console.log('Investment created:', createResponse.data);
       const investmentId = createResponse.data.data.id;
       setPaymentId(investmentId);
       setShowPayment(true);
       toast.success('Investment created! Please complete payment.');
     } catch (error) {
-      console.error('Error creating investment:', error.response?.data || error);
+      console.error('Error creating investment:', error);
       setError(error.response?.data?.error || 'Failed to create investment');
       toast.error(error.response?.data?.error || 'Failed to create investment');
     } finally {
@@ -129,8 +137,7 @@ const CreateInvestment = () => {
       <div className="min-h-screen bg-gradient-to-b from-primestone-50 to-white py-8">
         <div className="max-w-md mx-auto px-4">
           <button onClick={() => setShowPayment(false)} className="flex items-center text-neutral-600 hover:text-primestone-600 mb-6">
-            <HiOutlineArrowLeft className="w-5 h-5 mr-2" />
-            Back
+            <HiOutlineArrowLeft className="w-5 h-5 mr-2" /> Back
           </button>
           
           <div className="bg-white rounded-xl shadow-lg p-8">
@@ -157,7 +164,7 @@ const CreateInvestment = () => {
                 <li>• Send EXACTLY ${amount} USD worth of BTC</li>
                 <li>• After sending, click "I Have Sent the Payment" button</li>
                 <li>• Admin will verify and approve your payment manually</li>
-                <li>• Your investment will be activated after confirmation</li>
+                <li>• Yielding starts when you reach the package minimum</li>
               </ul>
             </div>
 
@@ -174,8 +181,7 @@ const CreateInvestment = () => {
     <div className="min-h-screen bg-gradient-to-b from-primestone-50 to-white py-8">
       <div className="max-w-2xl mx-auto px-4">
         <button onClick={() => navigate('/investments')} className="flex items-center text-neutral-600 hover:text-primestone-600 mb-6">
-          <HiOutlineArrowLeft className="w-5 h-5 mr-2" />
-          Back to Investments
+          <HiOutlineArrowLeft className="w-5 h-5 mr-2" /> Back to Investments
         </button>
 
         <div className="bg-white rounded-xl shadow-lg p-8">
@@ -192,20 +198,30 @@ const CreateInvestment = () => {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-neutral-700 mb-2">Select Package</label>
-            <select
-              value={selectedPackage?.id || ''}
-              onChange={(e) => {
-                const pkg = packages.find(p => p.id === parseInt(e.target.value));
-                setSelectedPackage(pkg);
-              }}
-              className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500"
-            >
+            <div className="grid grid-cols-1 gap-3">
               {packages.map(pkg => (
-                <option key={pkg.id} value={pkg.id}>
-                  {pkg.package_name} - Min: ${pkg.min_investment} | Max: ${pkg.max_investment} | {pkg.return_multiplier}x Returns
-                </option>
+                <div
+                  key={pkg.id}
+                  onClick={() => handlePackageSelect(pkg)}
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    selectedPackage?.id === pkg.id 
+                      ? 'border-primestone-500 bg-primestone-50' 
+                      : 'border-neutral-200 hover:border-primestone-300'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-bold text-primestone-900">{pkg.package_name}</h3>
+                      <p className="text-sm text-neutral-500">Min to Yield: ${pkg.min_investment}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-primestone-600">{pkg.return_multiplier}x Returns</p>
+                      <p className="text-xs text-neutral-500">Max: ${pkg.max_investment}</p>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </select>
+            </div>
           </div>
 
           {selectedPackage && (
@@ -226,14 +242,19 @@ const CreateInvestment = () => {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount (min $500)"
+                placeholder="Enter amount (min $100)"
                 className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primestone-500"
-                min="500"
+                min="100"
                 max={selectedPackage?.max_investment}
                 step="0.01"
               />
             </div>
-            <p className="text-xs text-neutral-500 mt-2">Min: $500 | Max: ${selectedPackage?.max_investment?.toLocaleString()}</p>
+            <p className="text-xs text-neutral-500 mt-2">Min: $100 | Max: ${selectedPackage?.max_investment?.toLocaleString()}</p>
+            {selectedPackage && (
+              <p className="text-xs text-yellow-600 mt-2">
+                💰 Yielding starts at ${selectedPackage.min_investment}
+              </p>
+            )}
           </div>
 
           {amount && selectedPackage && (

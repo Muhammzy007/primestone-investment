@@ -36,8 +36,22 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
   try {
     const { investmentId, amount, walletAddress } = req.body;
     
+    console.log('Payment notification received:', { investmentId, amount, userId: req.user.userId });
+    
     if (!investmentId || !amount) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    
+    // Check if payment already exists
+    const { data: existing } = await supabase
+      .from('payment_transactions')
+      .select('id')
+      .eq('investment_id', investmentId)
+      .eq('user_id', req.user.userId)
+      .maybeSingle();
+    
+    if (existing) {
+      return res.status(400).json({ success: false, error: 'Payment already submitted for this investment' });
     }
     
     const { data, error } = await supabase
@@ -48,14 +62,17 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
         amount: amount,
         payment_method: 'BTC',
         status: 'pending',
-        wallet_address: walletAddress,
+        wallet_address: walletAddress || 'bc1qa54zw7f8c7ekp78fpvmqgq4uzexgzfwgfuvvle',
         created_at: new Date().toISOString()
       })
       .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
     
-    console.log(`✅ Payment recorded for user ${req.user.userId}, investment ${investmentId}`);
+    console.log('✅ Payment recorded:', data);
     res.json({ success: true, data: data[0], message: 'Payment notification sent to admin' });
   } catch (error) {
     console.error('Mark payment error:', error);
@@ -107,8 +124,10 @@ router.get('/admin/pending', verifyAdmin, async (req, res) => {
       .order('created_at', { ascending: true });
     
     if (error) throw error;
+    console.log(`Found ${data?.length || 0} pending payments`);
     res.json({ success: true, data: data || [] });
   } catch (error) {
+    console.error('Error fetching pending payments:', error);
     res.json({ success: true, data: [] });
   }
 });
@@ -117,6 +136,8 @@ router.get('/admin/pending', verifyAdmin, async (req, res) => {
 router.post('/admin/approve/:id', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    
+    console.log(`Approving payment ${id}`);
     
     const { data, error } = await supabase
       .from('payment_transactions')
@@ -137,14 +158,44 @@ router.post('/admin/approve/:id', verifyAdmin, async (req, res) => {
       
       const totalPaid = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
       
-      await supabase
+      // Get package min_investment
+      const { data: investment } = await supabase
         .from('user_investments')
-        .update({ paid_amount: totalPaid })
-        .eq('id', investmentId);
+        .select('package_id')
+        .eq('id', investmentId)
+        .single();
+      
+      if (investment) {
+        const { data: pkg } = await supabase
+          .from('investment_packages')
+          .select('min_investment')
+          .eq('id', investment.package_id)
+          .single();
+        
+        // Check if min_investment reached and investment should become active
+        if (totalPaid >= pkg.min_investment) {
+          await supabase
+            .from('user_investments')
+            .update({ 
+              paid_amount: totalPaid,
+              status: 'active',
+              current_value: totalPaid,
+              yield_start_date: new Date().toISOString()
+            })
+            .eq('id', investmentId);
+          console.log(`Investment ${investmentId} activated!`);
+        } else {
+          await supabase
+            .from('user_investments')
+            .update({ paid_amount: totalPaid })
+            .eq('id', investmentId);
+        }
+      }
     }
     
     res.json({ success: true, message: 'Payment approved' });
   } catch (error) {
+    console.error('Error approving payment:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
