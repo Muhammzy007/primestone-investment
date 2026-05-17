@@ -172,14 +172,14 @@ const CreateInvestment = () => {
               <p className="text-sm text-yellow-800 font-medium mb-2">⚠️ Important Instructions:</p>
               <ul className="text-xs text-yellow-700 space-y-1">
                 <li>• Send EXACTLY ${amount} USD worth of BTC</li>
-                <li>• After sending, click "I Have Sent the Payment" button</li>
+                <li>• After sending, click "Confirm" button</li>
                 <li>• Admin will verify and approve your payment manually</li>
                 <li>• Yielding starts when you reach the package minimum</li>
               </ul>
             </div>
 
             <button onClick={handlePaymentSent} disabled={loading} className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50">
-              {loading ? 'Processing...' : '✅ I Have Sent the Payment'}
+              {loading ? 'Processing...' : '✅ Confirm'}
             </button>
           </div>
         </div>

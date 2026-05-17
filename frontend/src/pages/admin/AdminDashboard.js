@@ -157,7 +157,7 @@ const AdminDashboard = () => {
                     <th className="px-4 py-3 text-left">Date</th>
                     <th className="px-4 py-3 text-left">Status</th>
                     <th className="px-4 py-3 text-left">Action</th>
-                  </td>
+                  </tr>
                 </thead>
                 <tbody>
                   {pendingPayments.map((payment) => (
@@ -165,7 +165,7 @@ const AdminDashboard = () => {
                       <td className="px-4 py-3">
                         <div className="font-medium">{payment.users?.username}</div>
                         <div className="text-xs text-neutral-500">{payment.users?.email}</div>
-                       </td>
+                      </td>
                       <td className="px-4 py-3 font-semibold text-primestone-600">${payment.amount}</td>
                       <td className="px-4 py-3 text-sm">{new Date(payment.created_at).toLocaleString()}</td>
                       <td className="px-4 py-3">

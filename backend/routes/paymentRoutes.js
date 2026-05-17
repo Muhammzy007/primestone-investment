@@ -33,13 +33,13 @@ const verifyAdmin = (req, res, next) => {
   }
 };
 
-// MARK PAYMENT AS SENT - User clicks "I Have Sent the Payment"
+// MARK PAYMENT AS SENT - User clicks "Confirm"
 router.post('/mark-sent', verifyToken, async (req, res) => {
   try {
     const { investmentId, amount, walletAddress } = req.body;
     
     console.log('========================================');
-    console.log('📧 PAYMENT NOTIFICATION RECEIVED');
+    console.log('📧 PAYMENT CONFIRMATION RECEIVED');
     console.log('User ID:', req.user.userId);
     console.log('Investment ID:', investmentId);
     console.log('Amount:', amount);
@@ -61,7 +61,7 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Payment already submitted for this investment' });
     }
     
-    // Insert payment record
+    // Insert payment record - use NOW() for timestamp
     const { data, error } = await supabase
       .from('payment_transactions')
       .insert({
@@ -70,8 +70,7 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
         amount: amount,
         payment_method: 'BTC',
         status: 'pending',
-        wallet_address: walletAddress || 'bc1qa54zw7f8c7ekp78fpvmqgq4uzexgzfwgfuvvle',
-        created_at: new Date().toISOString()
+        wallet_address: walletAddress || 'bc1qa54zw7f8c7ekp78fpvmqgq4uzexgzfwgfuvvle'
       })
       .select();
     
@@ -86,7 +85,7 @@ router.post('/mark-sent', verifyToken, async (req, res) => {
     res.json({ 
       success: true, 
       data: data[0], 
-      message: 'Payment notification sent to admin. Your payment will be verified shortly.' 
+      message: 'Payment confirmation sent! Admin will verify shortly.' 
     });
   } catch (error) {
     console.error('Mark payment error:', error);
@@ -103,7 +102,7 @@ router.get('/history/:investmentId', verifyToken, async (req, res) => {
       .select('*')
       .eq('investment_id', investmentId)
       .eq('user_id', req.user.userId)
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: false });
     
     if (error) throw error;
     res.json({ success: true, data: { payments: data || [] } });
@@ -119,7 +118,7 @@ router.get('/my-payments', verifyToken, async (req, res) => {
       .from('payment_transactions')
       .select('*, investments:investment_id(*)')
       .eq('user_id', req.user.userId)
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: false });
     
     if (error) throw error;
     res.json({ success: true, data: data || [] });
@@ -135,7 +134,7 @@ router.get('/admin/pending', verifyAdmin, async (req, res) => {
       .from('payment_transactions')
       .select('*, users(id, username, email), investments:investment_id(*)')
       .eq('status', 'pending')
-      .order('created_at', { ascending: true });
+      .order('id', { ascending: true });
     
     if (error) throw error;
     console.log(`📋 Found ${data?.length || 0} pending payments for admin`);
@@ -156,7 +155,7 @@ router.post('/admin/approve/:id', verifyAdmin, async (req, res) => {
     // Update payment status
     const { data: payment, error } = await supabase
       .from('payment_transactions')
-      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+      .update({ status: 'confirmed' })
       .eq('id', parseInt(id))
       .select();
     
