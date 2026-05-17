@@ -34,49 +34,26 @@ const verifyAdmin = (req, res, next) => {
   }
 };
 
-// GET /api/admin/users - Get all users
-router.get('/users', verifyAdmin, async (req, res) => {
-  try {
-    console.log('Fetching all users...');
-    
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, username, email, role, is_active, created_at, last_login')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ success: false, error: error.message });
-    }
-    
-    console.log(`✅ Found ${data?.length || 0} users`);
-    res.json({ success: true, data: data || [] });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET /api/admin/dashboard/stats - Get statistics
+// GET /api/admin/dashboard/stats - Get dashboard statistics
 router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
   try {
-    console.log('Fetching admin dashboard stats...');
+    console.log('📊 Fetching admin dashboard stats...');
     
-    // Get total users
+    // Get total users count
     const { count: totalUsers, error: usersError } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true });
     
     if (usersError) console.error('Users count error:', usersError);
     
-    // Get total investments
+    // Get total investments count
     const { count: totalInvestments, error: invError } = await supabase
       .from('user_investments')
       .select('*', { count: 'exact', head: true });
     
     if (invError) console.error('Investments count error:', invError);
     
-    // Get pending withdrawals
+    // Get pending withdrawals count
     const { count: pendingWithdrawals, error: wdError } = await supabase
       .from('withdrawal_requests')
       .select('*', { count: 'exact', head: true })
@@ -101,11 +78,34 @@ router.get('/dashboard/stats', verifyAdmin, async (req, res) => {
       total_received: totalReceived
     };
     
-    console.log('📊 Admin stats:', stats);
+    console.log('📊 Admin stats returning:', stats);
     res.json({ success: true, data: { statistics: stats } });
   } catch (error) {
     console.error('Stats error:', error);
     res.json({ success: true, data: { statistics: { total_users: 0, total_investments: 0, pending_withdrawals: 0, total_received: 0 } } });
+  }
+});
+
+// GET /api/admin/users - Get all users
+router.get('/users', verifyAdmin, async (req, res) => {
+  try {
+    console.log('👥 Fetching all users...');
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, username, email, role, is_active, created_at, last_login')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    
+    console.log(`✅ Found ${data?.length || 0} users`);
+    res.json({ success: true, data: data || [] });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -115,13 +115,12 @@ router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
     const { userId } = req.params;
     const { isActive } = req.body;
     
-    console.log(`Toggling user ${userId} status to: ${isActive ? 'active' : 'inactive'}`);
+    console.log(`🔄 Toggling user ${userId} status to: ${isActive ? 'active' : 'inactive'}`);
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .update({ is_active: isActive })
-      .eq('id', parseInt(userId))
-      .select();
+      .eq('id', parseInt(userId));
     
     if (error) {
       console.error('Update error:', error);
@@ -129,7 +128,7 @@ router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
     }
     
     console.log(`✅ User ${userId} ${isActive ? 'activated' : 'deactivated'}`);
-    res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}`, data });
+    res.json({ success: true, message: `User ${isActive ? 'activated' : 'deactivated'}` });
   } catch (error) {
     console.error('Error toggling user:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -139,7 +138,7 @@ router.post('/users/:userId/toggle-status', verifyAdmin, async (req, res) => {
 // GET /api/admin/withdrawals/pending - Get pending withdrawals
 router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
   try {
-    console.log('Fetching pending withdrawals...');
+    console.log('💰 Fetching pending withdrawals...');
     
     const { data, error } = await supabase
       .from('withdrawal_requests')
@@ -164,7 +163,7 @@ router.get('/withdrawals/pending', verifyAdmin, async (req, res) => {
 router.post('/withdrawals/:id/approve', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`Approving withdrawal ${id}`);
+    console.log(`✅ Approving withdrawal ${id}`);
     
     const { error } = await supabase
       .from('withdrawal_requests')
@@ -190,7 +189,7 @@ router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    console.log(`Rejecting withdrawal ${id}, reason: ${reason}`);
+    console.log(`❌ Rejecting withdrawal ${id}, reason: ${reason}`);
     
     const { error } = await supabase
       .from('withdrawal_requests')
@@ -213,12 +212,12 @@ router.post('/withdrawals/:id/reject', verifyAdmin, async (req, res) => {
 // GET /api/admin/transactions - Get all transactions
 router.get('/transactions', verifyAdmin, async (req, res) => {
   try {
-    console.log('Fetching transactions...');
+    console.log('📋 Fetching transactions...');
     
     const { data, error } = await supabase
       .from('payment_transactions')
       .select('*, users(id, username, email)')
-      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .limit(100);
     
     if (error) throw error;

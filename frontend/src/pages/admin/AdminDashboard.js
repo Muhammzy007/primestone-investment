@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import { HiOutlineUsers, HiOutlineCash, HiOutlineCreditCard, HiOutlineClock, HiOutlineRefresh, HiOutlineCheckCircle, HiOutlineXCircle } from 'react-icons/hi';
+import { HiOutlineUsers, HiOutlineCash, HiOutlineCreditCard, HiOutlineClock, HiOutlineRefresh, HiOutlineCheckCircle } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -19,7 +19,10 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (admin) {
+      console.log('Admin user loaded:', admin);
       fetchData();
+    } else {
+      console.log('No admin user found');
     }
   }, [admin]);
 
@@ -27,25 +30,27 @@ const AdminDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching admin data...');
+      console.log('Fetching admin dashboard data...');
       
-      const [statsRes, paymentsRes] = await Promise.all([
-        api.get('/admin/dashboard/stats'),
-        api.get('/payments/admin/pending')
-      ]);
+      // Get stats
+      const statsResponse = await api.get('/admin/dashboard/stats');
+      console.log('Stats response:', statsResponse.data);
       
-      console.log('Stats response:', statsRes.data);
-      console.log('Payments response:', paymentsRes.data);
-      
-      if (statsRes.data.success) {
-        setStats(statsRes.data.data.statistics || {});
+      if (statsResponse.data.success) {
+        setStats(statsResponse.data.data.statistics || {});
       }
-      if (paymentsRes.data.success) {
-        setPendingPayments(paymentsRes.data.data || []);
+      
+      // Get pending payments
+      const paymentsResponse = await api.get('/payments/admin/pending');
+      console.log('Payments response:', paymentsResponse.data);
+      
+      if (paymentsResponse.data.success) {
+        setPendingPayments(paymentsResponse.data.data || []);
       }
+      
     } catch (err) {
       console.error('Error fetching admin data:', err);
-      setError('Failed to load dashboard data');
+      setError(err.response?.data?.error || 'Failed to load dashboard data');
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -55,9 +60,11 @@ const AdminDashboard = () => {
   const approvePayment = async (paymentId) => {
     if (!window.confirm('Approve this payment?')) return;
     try {
-      await api.post(`/payments/admin/approve/${paymentId}`);
-      toast.success('Payment approved successfully!');
-      fetchData();
+      const response = await api.post(`/payments/admin/approve/${paymentId}`);
+      if (response.data.success) {
+        toast.success('Payment approved successfully!');
+        fetchData();
+      }
     } catch (error) {
       console.error('Error approving payment:', error);
       toast.error('Failed to approve payment');
@@ -167,7 +174,7 @@ const AdminDashboard = () => {
                         <div className="text-xs text-neutral-500">{payment.users?.email}</div>
                       </td>
                       <td className="px-4 py-3 font-semibold text-primestone-600">${payment.amount}</td>
-                      <td className="px-4 py-3 text-sm">{new Date(payment.created_at).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm">{new Date(payment.payment_date || payment.created_at).toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">Pending</span>
                       </td>
